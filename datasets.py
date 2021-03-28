@@ -7,6 +7,29 @@ from torchvision import transforms, datasets
 
 n_bits = 8
 
+class Reshape():
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    Converts a PIL Image or numpy.ndarray (H x W x C) in the range
+    [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
+    if the PIL Image belongs to one of the modes (L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK, 1)
+    or if the numpy.ndarray has dtype = np.uint8
+    In the other cases, tensors are returned without scaling.
+    """
+    def __init__(self, shape):
+        self.shape = shape
+
+    def __call__(self, pic):
+        """
+        Args:
+            pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+        Returns:
+            Tensor: Converted image.
+        """
+        return pic.reshape(self.shape)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
 
 def preprocess(x):
     # Follows:
@@ -80,6 +103,7 @@ def get_MNIST(augment, dataroot, download):
 
     transformations.extend([
                         transforms.ToTensor(),
+                        Reshape((1,28,28)),
                         transforms.Normalize(
                                 (0.1307,), (0.3081,)
                         ),
@@ -87,6 +111,7 @@ def get_MNIST(augment, dataroot, download):
     )
     train_transform = transforms.Compose(transformations)
     test_transform = transforms.Compose([transforms.ToTensor(), 
+                            Reshape((1,28,28)),
                             transforms.Normalize(
                                 (0.1307,), (0.3081,)
                              ),
@@ -125,6 +150,7 @@ def get_FashionMNIST(augment, dataroot, download):
 
     transformations.extend([
                         transforms.ToTensor(),
+                        Reshape((1,28,28)),
                         transforms.Normalize(
                                 (0.1307,), (0.3081,)
                         ),
@@ -132,6 +158,7 @@ def get_FashionMNIST(augment, dataroot, download):
     )
     train_transform = transforms.Compose(transformations)
     test_transform = transforms.Compose([transforms.ToTensor(), 
+                            Reshape((1,28,28)),
                             transforms.Normalize(
                                 (0.1307,), (0.3081,)
                              ),
