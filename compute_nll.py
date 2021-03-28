@@ -15,6 +15,7 @@ import tqdm
 import numpy as np
 import torch.optim as optim
 import copy
+import os
 
 if (not torch.cuda.is_available()) :
     device_test = "cpu"
@@ -88,9 +89,14 @@ def compute_nll(data, model, nb_step = 1):
         grads = []
         # for i,param in enumerate(model_copy_copy.parameters()):
         for name, param in model_copy.named_parameters():
+          if param.grad is not None :
             grads.append(param.grad.view(-1))
         grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
         grad_total[nb_step].append(grads)
+
+    for key in grad_total.keys():
+      grad_total[key] = np.array(grad_total[key])
+      nlls[key] = np.array(nlls[key])
 
     for key in grad_total.keys():
       grad_total[key] = np.array(grad_total[key])
