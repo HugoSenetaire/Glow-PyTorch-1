@@ -78,12 +78,12 @@ def get_MNIST(augment, dataroot, download):
         transformations = []
 
 
-    transformations.extend(
+    transformations.extend([
                         transforms.ToTensor(),
                         transforms.Normalize(
                                 (0.1307,), (0.3081,)
                         ),
-                        preprocess,
+                        preprocess,]
     )
     train_transform = transforms.Compose(transformations)
     test_transform = transforms.Compose([transforms.ToTensor(), 
@@ -123,12 +123,12 @@ def get_FashionMNIST(augment, dataroot, download):
         transformations = []
 
 
-    transformations.extend(
+    transformations.extend([
                         transforms.ToTensor(),
                         transforms.Normalize(
                                 (0.1307,), (0.3081,)
                         ),
-                        preprocess,
+                        preprocess,]
     )
     train_transform = transforms.Compose(transformations)
     test_transform = transforms.Compose([transforms.ToTensor(), 

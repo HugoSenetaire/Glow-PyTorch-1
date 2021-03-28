@@ -72,7 +72,8 @@ def compute_nll(data, model, nb_step = 1):
            nll.backward()
            grads = []
            for name, param in model_copy.named_parameters():
-              grads.append(param.grad.view(-1))
+              if param.grad is not None :
+                grads.append(param.grad.view(-1))
            grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
            grad_total[k].append(grads)
 
