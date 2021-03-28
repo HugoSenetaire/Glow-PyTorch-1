@@ -15,9 +15,9 @@ from ignite.engine import Engine, Events
 from ignite.handlers import ModelCheckpoint, Timer
 from ignite.metrics import RunningAverage, Loss
 
-from datasets import get_CIFAR10, get_SVHN
+from datasets import get_CIFAR10, get_SVHN, get_MNIST, get_FashionMNIST 
 from model import Glow
-
+from compute_nll import *
 
 def check_manual_seed(seed):
     seed = seed or random.randint(1, 10000)
@@ -34,6 +34,12 @@ def check_dataset(dataset, dataroot, augment, download):
     if dataset == "svhn":
         svhn = get_SVHN(augment, dataroot, download)
         input_size, num_classes, train_dataset, test_dataset = svhn
+    if dataset == "mnist":
+        mnist = get_MNIST(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = mnist
+    if dataset == "fashionmnist":
+        fashionmnist = get_FashionMNIST(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = fashionmnist
 
     return input_size, num_classes, train_dataset, test_dataset
 
@@ -73,11 +79,13 @@ def compute_loss_y(nll, y_logits, y_weight, y, multi_class, reduction="mean"):
 
 def main(
     dataset,
+    dataset2,
     dataroot,
     download,
     augment,
     batch_size,
     eval_batch_size,
+    nlls_batch_size,
     epochs,
     saved_model,
     seed,
@@ -100,6 +108,7 @@ def main(
     output_dir,
     saved_optimizer,
     warmup,
+    every_epoch,
 ):
 
     device = "cpu" if (not torch.cuda.is_available() or not cuda) else "cuda:0"
@@ -107,7 +116,30 @@ def main(
     check_manual_seed(seed)
 
     ds = check_dataset(dataset, dataroot, augment, download)
+    ds2 = check_dataset(dataset2, dataroot, augment, download)
     image_shape, num_classes, train_dataset, test_dataset = ds
+    image_shape2, num_classes2, train_dataset_2, test_dataset_2 = ds2
+
+    assert(image_shape == image_shape2)
+    data1 = []
+    data2 = []
+    for k in range(nlls_batch_size):
+        dataaux, targetaux= test_dataset[k]
+        data1.append(dataaux)
+        dataaux, targetaux = test_dataset_2[k]
+        data2.append(dataaux)
+    # del test_loader_aux
+
+    # test_loader2 = data.DataLoader(
+    #     test_dataset_2,
+    #     batch_size=nlls_batch_size,
+    #     shuffle=False,
+    #     num_workers=1,
+    #     drop_last=False,
+    # )
+    # data2, target2 = next(iter(test_loader_2))
+    # del test_loader2
+
 
     # Note: unsupported for now
     multi_class = False
@@ -256,6 +288,7 @@ def main(
         init_targets = []
 
         with torch.no_grad():
+            print(train_loader)
             for batch, target in islice(train_loader, None, n_init_batches):
                 init_batches.append(batch)
                 init_targets.append(target)
@@ -298,6 +331,10 @@ def main(
         )
         timer.reset()
 
+    @trainer.on(Events.EPOCH_COMPLETED)
+    def eval_likelihood(engine):
+        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = 1, every_epoch = every_epoch)
+
     trainer.run(train_loader, epochs)
 
 
@@ -308,8 +345,16 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="cifar10",
-        choices=["cifar10", "svhn"],
+        choices=["cifar10", "svhn", "mnist", "fashionmnist"],
         help="Type of the dataset to be used.",
+    )
+
+    parser.add_argument(
+        "--dataset2",
+        type=str,
+        default="svhn",
+        choices = ["cifar10", "svhn", "mnist", "fashionmnist"],
+        help="Type of the dataset to be used for nlls comparisons",
     )
 
     parser.add_argument("--dataroot", type=str, default="./", help="path to dataset")
@@ -403,7 +448,18 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--nlls_batch_size",
+        type=int,
+        default= 10,
+        help= "batch size for nlls evaluation"
+    )
+
+    parser.add_argument(
         "--epochs", type=int, default=250, help="number of epochs to train for"
+    )
+
+    parser.add_argument(
+        "--every_epoch", type=int, default=10, help="do nlls evaluation every epoch"
     )
 
     parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")

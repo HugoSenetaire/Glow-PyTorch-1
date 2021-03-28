@@ -68,6 +68,96 @@ def get_CIFAR10(augment, dataroot, download):
     return image_shape, num_classes, train_dataset, test_dataset
 
 
+def get_MNIST(augment, dataroot, download):
+    image_shape = (28,28,1)
+    num_classes = 10
+
+    if augment:
+        transformations = [transforms.RandomAffine(0, translate=(0.1, 0.1))]
+    else:
+        transformations = []
+
+
+    transformations.extend(
+                        transforms.ToTensor(),
+                        transforms.Normalize(
+                                (0.1307,), (0.3081,)
+                        ),
+                        preprocess,
+    )
+    train_transform = transforms.Compose(transformations)
+    test_transform = transforms.Compose([transforms.ToTensor(), 
+                            transforms.Normalize(
+                                (0.1307,), (0.3081,)
+                             ),
+                            preprocess])
+
+    one_hot_encode = lambda target: F.one_hot(torch.tensor(target), num_classes)
+
+    path = Path(dataroot) / "data" / "MNIST"
+    train_dataset = datasets.MNIST(
+        path,
+        train=True,
+        transform=train_transform,
+        target_transform=one_hot_encode,
+        download=download,
+    )
+
+    test_dataset = datasets.MNIST(
+        path,
+        train=False,
+        transform=test_transform,
+        target_transform=one_hot_encode,
+        download=download,
+    )
+
+    return image_shape, num_classes, train_dataset, test_dataset   
+
+def get_FashionMNIST(augment, dataroot, download):
+    image_shape = (28,28,1)
+    num_classes = 10
+
+    if augment:
+        transformations = [transforms.RandomAffine(0, translate=(0.1, 0.1))]
+    else:
+        transformations = []
+
+
+    transformations.extend(
+                        transforms.ToTensor(),
+                        transforms.Normalize(
+                                (0.1307,), (0.3081,)
+                        ),
+                        preprocess,
+    )
+    train_transform = transforms.Compose(transformations)
+    test_transform = transforms.Compose([transforms.ToTensor(), 
+                            transforms.Normalize(
+                                (0.1307,), (0.3081,)
+                             ),
+                            preprocess])
+
+    one_hot_encode = lambda target: F.one_hot(torch.tensor(target), num_classes)
+
+    path = Path(dataroot) / "data" / "FashionMNIST"
+    train_dataset = datasets.FashionMNIST(
+        path,
+        train=True,
+        transform=train_transform,
+        target_transform=one_hot_encode,
+        download=download,
+    )
+
+    test_dataset = datasets.FashionMNIST(
+        path,
+        train=False,
+        transform=test_transform,
+        target_transform=one_hot_encode,
+        download=download,
+    )
+
+    return image_shape, num_classes, train_dataset, test_dataset   
+
 def get_SVHN(augment, dataroot, download):
     image_shape = (32, 32, 3)
     num_classes = 10
@@ -77,7 +167,11 @@ def get_SVHN(augment, dataroot, download):
     else:
         transformations = []
 
-    transformations.extend([transforms.ToTensor(), preprocess])
+    transformations.extend([transforms.ToTensor(), 
+                            transforms.Normalize(
+                                (0.1307,), (0.3081,)
+                             ),
+                            preprocess])
     train_transform = transforms.Compose(transformations)
 
     test_transform = transforms.Compose([transforms.ToTensor(), preprocess])
