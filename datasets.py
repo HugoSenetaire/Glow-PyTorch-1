@@ -92,7 +92,7 @@ def get_CIFAR10(augment, dataroot, download):
 
 
 def get_MNIST(augment, dataroot, download):
-    image_shape = (28,28,1)
+    image_shape = (1,28,28)
     num_classes = 10
 
     if augment:
@@ -103,7 +103,7 @@ def get_MNIST(augment, dataroot, download):
 
     transformations.extend([
                         transforms.ToTensor(),
-                        Reshape((28,28,1)),
+                        Reshape((1,28,28)),
                         transforms.Normalize(
                                 (0.1307,), (0.3081,)
                         ),
@@ -111,7 +111,7 @@ def get_MNIST(augment, dataroot, download):
     )
     train_transform = transforms.Compose(transformations)
     test_transform = transforms.Compose([transforms.ToTensor(), 
-                            Reshape((28,28,1)),
+                            Reshape((1,28,28)),
                             transforms.Normalize(
                                 (0.1307,), (0.3081,)
                              ),
@@ -139,7 +139,7 @@ def get_MNIST(augment, dataroot, download):
     return image_shape, num_classes, train_dataset, test_dataset   
 
 def get_FashionMNIST(augment, dataroot, download):
-    image_shape = (28,28,1)
+    image_shape = (1,28,28)
     num_classes = 10
 
     if augment:
@@ -150,7 +150,7 @@ def get_FashionMNIST(augment, dataroot, download):
 
     transformations.extend([
                         transforms.ToTensor(),
-                        Reshape((28,28,1)),
+                        Reshape((1,28,28)),
                         transforms.Normalize(
                                 (0.1307,), (0.3081,)
                         ),
@@ -158,7 +158,7 @@ def get_FashionMNIST(augment, dataroot, download):
     )
     train_transform = transforms.Compose(transformations)
     test_transform = transforms.Compose([transforms.ToTensor(), 
-                            Reshape((28,28,1)),
+                            Reshape((1,28,28)),
                             transforms.Normalize(
                                 (0.1307,), (0.3081,)
                              ),
