@@ -49,6 +49,8 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dat
 
 
 
+
+
 def compute_nll(data, model, nb_step = 1):
     torch.random.manual_seed(0)
     np.random.seed(0)
@@ -61,40 +63,37 @@ def compute_nll(data, model, nb_step = 1):
       grad_total[k] = []
     for x in tqdm.tqdm(data) :
         model_copy = copy.deepcopy(model).to(device_test)
-        model_copy.zero_grad()
         optimizer = optim.Adam(model_copy.parameters(), lr=1e-5)
+        model_copy.zero_grad()
         x = x.to(device_test).unsqueeze(0)
-        
-
-
         _, nll, _ = model_copy(x, y_onehot=None)
         nlls[0].append(nll.detach().cpu().item())
-
-
-        for k in range(1,nb_step):
-           nll.backward()
-           grads = []
-           for name, param in model_copy.named_parameters():
+        for name, param in model_copy.named_parameters():
               if param.grad is not None :
                 grads.append(param.grad.view(-1))
            grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
-           grad_total[k].append(grads)
+           grad_total[0].append(grads)
+ 
 
-
-           optimizer.step()
-           model_copy.zero_grad()
-           _, nll, _ = model_copy(x, y_onehot=None)
-           nlls[k+1].append(nll.detach().cpu().item())
-          
-
-        nll.backward()
-        grads = []
-        # for i,param in enumerate(model_copy_copy.parameters()):
-        for name, param in model_copy.named_parameters():
-          if param.grad is not None :
-            grads.append(param.grad.view(-1))
-        grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
-        grad_total[nb_step].append(grads)
+        for k in range(1,nb_step):
+            grads = []
+            diff_param = []
+            optimizer.step()
+            model_copy.zero_grad()
+            _, nll, _ = model_copy(x, y_onehot=None)
+            nll.backward()
+            nlls[k].append(nll.detach().cpu().item())
+            for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
+                assert(name_copy == name)
+                if param_copy.grad is not None :
+                    aux_diff_param = param_copy.data - param.data
+                    diff_param.append(aux_diff_param.view(-1))
+                    grads.append(param_copy.grad.view(-1))
+            # grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
+            grads = torch.flatten(torch.cat(grads))
+            diff_param = torch.flatten(torch.cat(diff_param))
+            grad_total[k].append(torch.dot(grads, diff_param))
+           
 
     for key in grad_total.keys():
       grad_total[key] = np.array(grad_total[key])
