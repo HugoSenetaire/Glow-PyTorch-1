@@ -43,6 +43,8 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dat
         save_nll(output_path_global, nlls1, nlls2, dataset1_name = "CIFAR10", dataset2_name = "SVHN")
         save_grad(output_path_global, grads1, grads2, dataset1_name = "CIFAR10", dataset2_name = "SVHN")
 
+        compute_roc_auc_scores(output_path_global, nlls1, nlls2, "NLL")
+        compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
 
 
 
@@ -69,7 +71,7 @@ def compute_nll(data, model, nb_step = 1):
         nlls[0].append(nll.detach().cpu().item())
 
 
-        for k in range(nb_step):
+        for k in range(1,nb_step):
            nll.backward()
            grads = []
            for name, param in model_copy.named_parameters():
@@ -126,7 +128,27 @@ def save_nll(output_path, nlls_1, nlls_2, dataset1_name = "CIFAR10", dataset2_na
         plt.boxplot([-nlls_2[key],-nlls_1[key]], labels = [dataset2_name, f"{dataset1_name}"])
         plt.savefig(os.path.join(output_path,f"NLLs_BOXPLOT_Step{key}"))
         plt.clf()
-    
+
+
+from sklearn.metrics import roc_auc_score
+def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
+    test = ""
+    for key in list_1.keys():
+        test+= f"For step {key} \n "
+        result_1 = list_1[key]
+        label_1 = np.ones(np.shape(result_1))
+        result_2 = list_2[key]
+        label_2 = np.zeros(np.shape(result_2))
+        label_total = np.concatenate((label_1, label_2))
+        result_total = np.concatenate((result_1, result_2))
+        rocauc_score = roc_auc_score(label_total, result_total)
+        test+= f"Result : {rocauc_score}, Result Reverse {1-rocauc_score}"
+
+    with open(os.path.join(output_path, f"{prefix}_auroc"), "a") as f :
+        f.writelines(test)
+
+
+
 
 
 def save_grad(output_path, grads_1, grads_2, dataset1_name = "CIFAR10", dataset2_name = "SVHN"):
