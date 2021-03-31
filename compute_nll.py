@@ -62,20 +62,22 @@ def compute_nll(data, model, nb_step = 1):
       nlls[k] = []
       grad_total[k] = []
     for x in tqdm.tqdm(data) :
+        grads = []
         model_copy = copy.deepcopy(model).to(device_test)
         optimizer = optim.Adam(model_copy.parameters(), lr=1e-5)
         model_copy.zero_grad()
         x = x.to(device_test).unsqueeze(0)
         _, nll, _ = model_copy(x, y_onehot=None)
+        nll.backward()
         nlls[0].append(nll.detach().cpu().item())
         for name, param in model_copy.named_parameters():
-              if param.grad is not None :
+            if param.grad is not None :
                 grads.append(param.grad.view(-1))
-           grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
-           grad_total[0].append(grads)
+        grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
+        grad_total[0].append(grads)
  
 
-        for k in range(1,nb_step):
+        for k in range(1,nb_step+1):
             grads = []
             diff_param = []
             optimizer.step()
@@ -92,7 +94,7 @@ def compute_nll(data, model, nb_step = 1):
             # grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
             grads = torch.flatten(torch.cat(grads))
             diff_param = torch.flatten(torch.cat(diff_param))
-            grad_total[k].append(torch.dot(grads, diff_param))
+            grad_total[k].append(torch.dot(grads, diff_param).detach().cpu().item())
            
 
     for key in grad_total.keys():
