@@ -26,7 +26,7 @@ else :
         device_test = "cuda:0"
 
 
-def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dataset2_name = "SVHN", nb_step = 1, every_epoch = 10):
+def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dataset2_name = "SVHN", nb_step = 1, every_epoch = 10, lr = 1e-5):
     if epoch % every_epoch == 0 :
         nlls1, grads1 = compute_nll(data1, model, nb_step = nb_step)
         nlls2, grads2 = compute_nll(data2, model, nb_step = nb_step)
@@ -40,8 +40,9 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dat
             os.makedirs(output_path_global)
 
 
-        save_nll(output_path_global, nlls1, nlls2, dataset1_name = "CIFAR10", dataset2_name = "SVHN")
-        save_grad(output_path_global, grads1, grads2, dataset1_name = "CIFAR10", dataset2_name = "SVHN")
+        save_figures(output_path_global, nlls1, nlls2, "NLL", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, grads1, grads2, "GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, grads1, grads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
 
         compute_roc_auc_scores(output_path_global, nlls1, nlls2, "NLL")
         compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
@@ -51,21 +52,29 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dat
 
 
 
-def compute_nll(data, model, nb_step = 1):
+def compute_nll(data, model, nb_step = 1, lr = 1e-5):
     torch.random.manual_seed(0)
     np.random.seed(0)
     
     
     nlls = {}
     grad_total = {}
+    grad_stat_total = {}
     for k in range(nb_step+1):
       nlls[k] = []
       grad_total[k] = []
+      grad_stat_total[k] = []
+
+
+
     for x in tqdm.tqdm(data) :
-        grads = []
         model_copy = copy.deepcopy(model).to(device_test)
-        optimizer = optim.Adam(model_copy.parameters(), lr=1e-5)
+        optimizer = optim.SGD(model_copy.parameters(), lr= lr, momentum = 0.)
         model_copy.zero_grad()
+
+
+        grads = []
+        diff_param = []
         x = x.to(device_test).unsqueeze(0)
         _, nll, _ = model_copy(x, y_onehot=None)
         nll.backward()
@@ -73,43 +82,50 @@ def compute_nll(data, model, nb_step = 1):
         for name, param in model_copy.named_parameters():
             if param.grad is not None :
                 grads.append(param.grad.view(-1))
-        grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
-        grad_total[0].append(grads)
- 
+        grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
+
+        optimizer.step()
+        for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
+            assert(name_copy == name)
+            if param.grad is not None :
+                aux_diff_param = param.copy.data - param.data
+                diff_param.append(aux_diff_param.view(-1))
+        grads = torch.flatten(torch.cat(grads))
+        diff_param = torch.flatten(torch.cat(diff_param))
+        grad_stat_total[0].append(torch.dot(grad, diff_param).detach().cpu().item())
+
+
 
         for k in range(1,nb_step+1):
+            model_copy.zero_grad()
             grads = []
             diff_param = []
-            optimizer.step()
-            model_copy.zero_grad()
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
             nlls[k].append(nll.detach().cpu().item())
+            optimizer.step()
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                 assert(name_copy == name)
                 if param_copy.grad is not None :
                     aux_diff_param = param_copy.data - param.data
                     diff_param.append(aux_diff_param.view(-1))
                     grads.append(param_copy.grad.view(-1))
-            # grads = torch.sum(torch.cat(grads)**2).detach().cpu().item()
             grads = torch.flatten(torch.cat(grads))
+            grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
             diff_param = torch.flatten(torch.cat(diff_param))
-            grad_total[k].append(torch.dot(grads, diff_param).detach().cpu().item())
+            grad_stat_total[k].append(torch.dot(grads, diff_param).detach().cpu().item())
            
 
     for key in grad_total.keys():
       grad_total[key] = np.array(grad_total[key])
       nlls[key] = np.array(nlls[key])
-
-    for key in grad_total.keys():
-      grad_total[key] = np.array(grad_total[key])
-      nlls[key] = np.array(nlls[key])
+      grad_stat_total[key] = np.array(grad_stat_total[key])
 
         
-    return nlls, grad_total
+    return nlls, grad_total, grad_stat_total
 
 
-def save_nll(output_path, nlls_1, nlls_2, dataset1_name = "CIFAR10", dataset2_name = "SVHN"):
+def save_figures(output_path, nlls_1, nlls_2, prefix, dataset1_name = "CIFAR10", dataset2_name = "SVHN"):
     for key in nlls_1.keys():
         print(f"Steps {key}")
         print(f"{dataset2_name} NLL",np.mean(-nlls_2[key]))
@@ -122,12 +138,12 @@ def save_nll(output_path, nlls_1, nlls_2, dataset1_name = "CIFAR10", dataset2_na
         plt.hist(-nlls_2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
         plt.hist(-nlls_1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
         plt.legend()
-        plt.savefig(os.path.join(output_path,f"NLLs_Step{key}"))
+        plt.savefig(os.path.join(output_path,f"{prefix}_Step{key}"))
         plt.clf()
 
         plt.figure(figsize = (20,10))
         plt.boxplot([-nlls_2[key],-nlls_1[key]], labels = [dataset2_name, f"{dataset1_name}"])
-        plt.savefig(os.path.join(output_path,f"NLLs_BOXPLOT_Step{key}"))
+        plt.savefig(os.path.join(output_path,f"{prefix}_BOXPLOT_Step{key}"))
         plt.clf()
 
 
@@ -149,30 +165,3 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
         f.writelines(test)
 
 
-
-
-
-def save_grad(output_path, grads_1, grads_2, dataset1_name = "CIFAR10", dataset2_name = "SVHN"):
-
-    for key in grads_1.keys():
-
-        print(f"Steps {key}")
-        print(f"{dataset2_name} grad",np.mean(-grads_2[key]))
-        print(f"{dataset1_name} grad",np.mean(-grads_1[key]))
-
-
-        plt.figure(figsize=(20,10))
-        plt.title("Histogram Glow - trained on CIFAR10")
-        plt.xlabel("Negative bits per dimension")
-
-        plt.hist(grads_2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
-        plt.hist(grads_1[key], label=dataset1_name, density=True, bins=50, alpha =0.8)
-        plt.legend()
-        plt.savefig(os.path.join(output_path,f"Grads_Step{key}"))
-        plt.clf()
-
-
-        plt.figure(figsize = (20,10))
-        plt.boxplot([grads_2[key],grads_1[key]], labels = [dataset2_name, dataset1_name])
-        plt.savefig(os.path.join(output_path,f"Grads_BOXPLOT_Step{key}"))
-        plt.clf()
