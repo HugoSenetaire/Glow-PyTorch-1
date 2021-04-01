@@ -28,8 +28,8 @@ else :
 
 def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dataset2_name = "SVHN", nb_step = 1, every_epoch = 10, lr = 1e-5):
     if epoch % every_epoch == 0 :
-        nlls1, grads1 = compute_nll(data1, model, nb_step = nb_step)
-        nlls2, grads2 = compute_nll(data2, model, nb_step = nb_step)
+        nlls1, grads1, statgrads1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
+        nlls2, grads2, statgrads2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
 
 
         output_path_global = os.path.join(path,"graphs")
@@ -42,10 +42,11 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dat
 
         save_figures(output_path_global, nlls1, nlls2, "NLL", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, grads1, grads2, "GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
-        save_figures(output_path_global, grads1, grads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, statgrads1, statgrads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
 
         compute_roc_auc_scores(output_path_global, nlls1, nlls2, "NLL")
         compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
+        compute_roc_auc_scores(output_path_global, statgrads1, statgrads2, "statgrads")
 
 
 
@@ -79,15 +80,16 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
         _, nll, _ = model_copy(x, y_onehot=None)
         nll.backward()
         nlls[0].append(nll.detach().cpu().item())
-        for name, param in model_copy.named_parameters():
-            if param.grad is not None :
+        optimizer.step()
+        for name_copy, param_copy in model_copy.named_parameters():
+            if param_copy.grad is not None :
                 grads.append(param.grad.view(-1))
         grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
 
-        optimizer.step()
+
         for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
             assert(name_copy == name)
-            if param.grad is not None :
+            if param_copy.grad is not None :
                 aux_diff_param = param_copy.data - param.data
                 diff_param.append(aux_diff_param.view(-1))
         grads = torch.flatten(torch.cat(grads))
