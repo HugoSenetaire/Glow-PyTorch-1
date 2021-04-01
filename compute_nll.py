@@ -88,7 +88,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
         for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
             assert(name_copy == name)
             if param.grad is not None :
-                aux_diff_param = param.copy.data - param.data
+                aux_diff_param = param_copy.data - param.data
                 diff_param.append(aux_diff_param.view(-1))
         grads = torch.flatten(torch.cat(grads))
         diff_param = torch.flatten(torch.cat(diff_param))
