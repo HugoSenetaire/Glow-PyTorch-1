@@ -92,7 +92,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
                 diff_param.append(aux_diff_param.view(-1))
         grads = torch.flatten(torch.cat(grads))
         diff_param = torch.flatten(torch.cat(diff_param))
-        grad_stat_total[0].append(torch.dot(grad, diff_param).detach().cpu().item())
+        grad_stat_total[0].append(torch.dot(grads, diff_param).detach().cpu().item())
 
 
 
