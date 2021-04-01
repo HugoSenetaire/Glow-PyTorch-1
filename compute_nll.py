@@ -79,7 +79,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
         x = x.to(device_test).unsqueeze(0)
         _, nll, _ = model_copy(x, y_onehot=None)
         nll.backward()
-        nlls[0].append(nll.detach().cpu().item())
+        nlls[0].append(-nll.detach().cpu().item())
         optimizer.step()
         for name_copy, param_copy in model_copy.named_parameters():
             if param_copy.grad is not None :
@@ -104,7 +104,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
             diff_param = []
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
-            nlls[k].append(nll.detach().cpu().item())
+            nlls[k].append(-nll.detach().cpu().item())
             optimizer.step()
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                 assert(name_copy == name)
@@ -144,7 +144,7 @@ def save_figures(output_path, nlls_1, nlls_2, prefix, dataset1_name = "CIFAR10",
         plt.close()
 
         plt.figure(figsize = (20,10))
-        plt.boxplot([-nlls_2[key],-nlls_1[key]], labels = [dataset2_name, f"{dataset1_name}"])
+        plt.boxplot([nlls_2[key], nlls_1[key]], labels = [dataset2_name, f"{dataset1_name}"])
         plt.savefig(os.path.join(output_path,f"{prefix}_BOXPLOT_Step{key}"))
         plt.close()
 
