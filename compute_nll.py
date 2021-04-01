@@ -83,7 +83,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
         optimizer.step()
         for name_copy, param_copy in model_copy.named_parameters():
             if param_copy.grad is not None :
-                grads.append(param.grad.view(-1))
+                grads.append(param_copy.grad.view(-1))
         grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
 
 
@@ -94,7 +94,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
                 diff_param.append(aux_diff_param.view(-1))
         grads = torch.flatten(torch.cat(grads))
         diff_param = torch.flatten(torch.cat(diff_param))
-        grad_stat_total[0].append(torch.dot(grads, diff_param).detach().cpu().item())
+        grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
 
 
 
@@ -115,7 +115,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
             grads = torch.flatten(torch.cat(grads))
             grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
             diff_param = torch.flatten(torch.cat(diff_param))
-            grad_stat_total[k].append(torch.dot(grads, diff_param).detach().cpu().item())
+            grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
            
 
     for key in grad_total.keys():
@@ -137,16 +137,16 @@ def save_figures(output_path, nlls_1, nlls_2, prefix, dataset1_name = "CIFAR10",
         plt.figure(figsize=(20,10))
         plt.title(f"Histogram Glow - trained on {dataset1_name}")
         plt.xlabel("Negative bits per dimension")
-        plt.hist(-nlls_2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
-        plt.hist(-nlls_1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
+        plt.hist(nlls_2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
+        plt.hist(nlls_1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
         plt.legend()
         plt.savefig(os.path.join(output_path,f"{prefix}_Step{key}"))
-        plt.clf()
+        plt.close()
 
         plt.figure(figsize = (20,10))
         plt.boxplot([-nlls_2[key],-nlls_1[key]], labels = [dataset2_name, f"{dataset1_name}"])
         plt.savefig(os.path.join(output_path,f"{prefix}_BOXPLOT_Step{key}"))
-        plt.clf()
+        plt.close()
 
 
 from sklearn.metrics import roc_auc_score
