@@ -128,17 +128,6 @@ def main(
         data1.append(dataaux)
         dataaux, targetaux = test_dataset_2[k]
         data2.append(dataaux)
-    # del test_loader_aux
-
-    # test_loader2 = data.DataLoader(
-    #     test_dataset_2,
-    #     batch_size=nlls_batch_size,
-    #     shuffle=False,
-    #     num_workers=1,
-    #     drop_last=False,
-    # )
-    # data2, target2 = next(iter(test_loader_2))
-    # del test_loader2
 
 
     # Note: unsupported for now

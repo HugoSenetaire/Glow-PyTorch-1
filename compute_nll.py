@@ -161,7 +161,7 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
         label_total = np.concatenate((label_1, label_2))
         result_total = np.concatenate((result_1, result_2))
         rocauc_score = roc_auc_score(label_total, result_total)
-        test+= f"Result : {rocauc_score}, Result Reverse {1-rocauc_score}"
+        test+= f"Result : {rocauc_score}, Result Reverse {1-rocauc_score} \n"
 
     with open(os.path.join(output_path, f"{prefix}_auroc"), "a") as f :
         f.writelines(test)
