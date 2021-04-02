@@ -102,6 +102,7 @@ def main(
     max_grad_clip,
     max_grad_norm,
     lr,
+    lr_test,
     n_workers,
     cuda,
     n_init_batches,
@@ -322,7 +323,7 @@ def main(
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def eval_likelihood(engine):
-        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = 1, every_epoch = every_epoch)
+        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = 1, every_epoch = every_epoch, lr=lr_test)
 
     trainer.run(train_loader, epochs)
 
@@ -452,6 +453,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
+
+    parser.add_argument("--lr_test", type=float, default = 1e-5, help="Learning rate for the evaluation of ood")
 
     parser.add_argument(
         "--warmup",
