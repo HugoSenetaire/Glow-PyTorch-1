@@ -279,7 +279,7 @@ def calculate_score_statistic_from_model(data, path_model, pathweights, fischer_
 
     for x in tqdm.tqdm(data) :
         # load weights.  print the weights.
-        model = load_model_from_param(path_param, path_weight, num_classes, image_shape).cuda()
+        model = load_model_from_param(path_model, pathweights, num_classes, image_shape).cuda()
         x = x.to(device_test).unsqueeze(0)
         grads = []
 
@@ -312,12 +312,12 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
       grad_stat_total[k] = []
       likelihood_ratio_statistic[k] = []
 
-    model = load_model_from_param(path_param, path_weight, num_classes, image_shape).cuda()
+    model = load_model_from_param(path_model, pathweights, num_classes, image_shape).cuda()
 
 
     for x in tqdm.tqdm(data) :
         # load weights.  print the weights.
-        model_copy = load_model_from_param(path_param, path_weight, num_classes, image_shape).cuda()
+        model_copy = load_model_from_param(path_model, pathweights, num_classes, image_shape).cuda()
         optimizer = optim.SGD(model_copy.parameters(), lr= lr, momentum = 0.)
         model_copy.zero_grad()
 
