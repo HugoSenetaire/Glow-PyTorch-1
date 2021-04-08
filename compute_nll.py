@@ -227,7 +227,7 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
     if not os.path.exists(path):
         os.makedirs(path)
     torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
-    pathweight = os.path.join(path,"current_tested_model.pth")
+    pathweights = os.path.join(path,"current_tested_model.pth")
     pathmodel = os.path.join(path, "hparams.json")
     
     if epoch % every_epoch == 0 :
