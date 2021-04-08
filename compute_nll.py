@@ -54,7 +54,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
             if param.grad is not None :
                 current_grad.append(-param.grad.view(-1))
 
-        current_grad = torch.cat(current_grad**2)
+        current_grad = torch.cat(current_grad)**2
         if total_grad is None :
             total_grad = copy.deepcopy(current_grad)
         else :
@@ -66,7 +66,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
 def calculate_score_statistic(data, model, fischer_matrix):
     torch.random.manual_seed(0)
     np.random.seed(0)
-
+    score = {}
     for key in fischer_matrix.keys():
         score[key]= []
 
