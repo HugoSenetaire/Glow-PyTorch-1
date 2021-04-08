@@ -300,3 +300,16 @@ class Glow(nn.Module):
         for name, m in self.named_modules():
             if isinstance(m, ActNorm2d):
                 m.inited = True
+
+
+def load_model_from_param(path_param, path_weight, num_classes, image_shape):
+    with open('/content/drive/MyDrive/weights_glow/hparams.json') as json_file:  
+        hparams = json.load(json_file)
+
+    model = Glow(image_shape, hparams['hidden_channels'], hparams['K'], hparams['L'], hparams['actnorm_scale'],
+             hparams['flow_permutation'], hparams['flow_coupling'], hparams['LU_decomposed'], num_classes,
+             hparams['learn_top'], hparams['y_condition'])
+
+
+    model.load_state_dict(torch.load(path_weight)['model'])
+    model.set_actnorm_init()

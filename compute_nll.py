@@ -8,7 +8,7 @@ import seaborn as sns
 sns.set()
 
 from datasets import get_CIFAR10, get_SVHN, get_FashionMNIST, get_MNIST, postprocess
-from model import Glow
+from model import Glow, load_model_from_param
 from torch import autograd
 from torchvision.utils import make_grid
 from modules import (
@@ -83,7 +83,7 @@ def calculate_score_statistic(data, model, fischer_matrix):
         for name_copy, param_copy in model_copy.named_parameters():
             if param_copy.grad is not None :
                 grads.append(-param_copy.grad.view(-1))
-
+        grads = torch.cat(grads)
         for key in fischer_matrix.keys():
             score[key].append(torch.sum(grads**2 * fischer_matrix[key]))
 
@@ -92,10 +92,16 @@ def calculate_score_statistic(data, model, fischer_matrix):
 
 
 
+
+
 def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, nb_step = 1, every_epoch = 10, lr = 1e-5):
     if epoch % every_epoch == 0 :
         lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
         lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
+
+        torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
+        pathweight = os.path.join(path,"current_tested_model.pth")
+        pathmodel = os.path.join(path, "hparams.json")
 
         fischer_approximation_matrix = {}
         fischer_approximation_matrix[1000] = fischer_approximation(model)
@@ -211,6 +217,161 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 
         
     return lls, grad_total, grad_stat_total, likelihood_ratio_statistic
+
+
+### Model with loading weights :
+
+
+def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, image_shape, num_classes, nb_step = 1, every_epoch = 10, lr = 1e-5):
+    if epoch % every_epoch == 0 :
+        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
+        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
+
+        torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
+        pathweight = os.path.join(path,"current_tested_model.pth")
+        pathmodel = os.path.join(path, "hparams.json")
+
+        fischer_approximation_matrix = {}
+        fischer_approximation_matrix[1000] = fischer_approximation(model)
+        fischer_score_1 = calculate_score_statistic_from_model(data1, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes)
+        fischer_score_2 = calculate_score_statistic_from_model(data2, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes) 
+
+        output_path_global = os.path.join(path,"graphs")
+        if not os.path.exists(output_path_global):
+            os.makedirs(output_path_global)
+        output_path_global = os.path.join(output_path_global, f"epoch{epoch}")
+        if not os.path.exists(output_path_global):
+            os.makedirs(output_path_global)
+
+        output_image = sample(model)
+        grid = make_grid(output_image[:30], nrow=6).permute(1,2,0)
+        plt.figure(figsize=(10,10))
+        plt.imshow(grid)
+        plt.axis('off')
+        plt.savefig(os.path.join(output_path_global,"samples.jpg"))
+
+
+        save_figures(output_path_global, lls1, lls2, "log_likelihood", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, grads1, grads2, "GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, statgrads1, statgrads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "Likelihood ratio", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, fischer_score_1, fischer_score_2, "Score Stats", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+
+        compute_roc_auc_scores(output_path_global, lls1, lls2, "log_likelihood")
+        compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
+        compute_roc_auc_scores(output_path_global, statgrads1, statgrads2, "statgrads")
+        compute_roc_auc_scores(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "LikelihoodRatio")
+        compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "FischerScoreStats")
+
+
+def calculate_score_statistic_from_model(data, path_model, pathweights, fischer_matrix, image_shape, num_classes):
+    torch.random.manual_seed(0)
+    np.random.seed(0)
+    score = {}
+    for key in fischer_matrix.keys():
+        score[key]= []
+
+
+    for x in tqdm.tqdm(data) :
+        # load weights.  print the weights.
+        model = load_model_from_param(path_param, path_weight, num_classes, image_shape).cuda()
+        x = x.to(device_test).unsqueeze(0)
+        grads = []
+
+        _, nll, _ = model_copy(x, y_onehot=None)
+        nll.backward()
+        for name_copy, param_copy in model_copy.named_parameters():
+            if param_copy.grad is not None :
+                grads.append(-param_copy.grad.view(-1))
+        grads = torch.cat(grads)
+        for key in fischer_matrix.keys():
+            score[key].append(torch.sum(grads**2 * fischer_matrix[key]))
+
+    return score
+
+
+
+def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classes, nb_step = 1, lr = 1e-5):
+    torch.random.manual_seed(0)
+    np.random.seed(0)
+    
+    
+    lls = {}
+    grad_total = {}
+    grad_stat_total = {}
+    likelihood_ratio_statistic = {}
+
+    for k in range(nb_step+1):
+      lls[k] = []
+      grad_total[k] = []
+      grad_stat_total[k] = []
+      likelihood_ratio_statistic[k] = []
+
+    model = load_model_from_param(path_param, path_weight, num_classes, image_shape).cuda()
+
+
+    for x in tqdm.tqdm(data) :
+        # load weights.  print the weights.
+        model_copy = load_model_from_param(path_param, path_weight, num_classes, image_shape).cuda()
+        optimizer = optim.SGD(model_copy.parameters(), lr= lr, momentum = 0.)
+        model_copy.zero_grad()
+
+
+        grads = []
+        diff_param = []
+        x = x.to(device_test).unsqueeze(0)
+        _, nll, _ = model_copy(x, y_onehot=None)
+        nll.backward()
+        lls[0].append(-nll.detach().cpu().item())
+        optimizer.step()
+        for name_copy, param_copy in model_copy.named_parameters():
+            if param_copy.grad is not None :
+                grads.append(-param_copy.grad.view(-1))
+        grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
+
+
+        for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
+            assert(name_copy == name)
+            if param_copy.grad is not None :
+                aux_diff_param = param_copy.data - param.data
+                diff_param.append(aux_diff_param.view(-1))
+        grads = torch.flatten(torch.cat(grads))
+        diff_param = torch.flatten(torch.cat(diff_param))
+        grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
+
+
+
+        for k in range(1,nb_step+1):
+            model_copy.zero_grad()
+            grads = []
+            diff_param = []
+            _, nll, _ = model_copy(x, y_onehot=None)
+            nll.backward()
+            lls[k].append(-nll.detach().cpu().item())
+            optimizer.step()
+            for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
+                assert(name_copy == name)
+                if param_copy.grad is not None :
+                    aux_diff_param = param_copy.data - param.data
+                    diff_param.append(aux_diff_param.view(-1))
+                    grads.append(-param_copy.grad.view(-1))
+            grads = torch.flatten(torch.cat(grads))
+            grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
+            diff_param = torch.flatten(torch.cat(diff_param))
+            grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
+           
+
+    for key in grad_total.keys():
+      grad_total[key] = np.array(grad_total[key])
+      lls[key] = np.array(lls[key])
+      likelihood_ratio_statistic[key] = lls[key] - lls[0]
+      grad_stat_total[key] = np.array(grad_stat_total[key])
+
+        
+    return lls, grad_total, grad_stat_total, likelihood_ratio_statistic
+
+
+### Utils general :
 
 
 def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_name):
