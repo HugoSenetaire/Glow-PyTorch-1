@@ -38,10 +38,11 @@ def sample(model):
         images = postprocess(model(y_onehot=y, temperature=1, reverse=True))
 
     return images.cpu()
+
 def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, nb_step = 1, every_epoch = 10, lr = 1e-5):
     if epoch % every_epoch == 0 :
-        nlls1, grads1, statgrads1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
-        nlls2, grads2, statgrads2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
+        lls1, grads1, statgrads1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
+        lls2, grads2, statgrads2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
 
 
 
@@ -61,11 +62,11 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
         plt.savefig(os.path.join(output_path_global,"samples.jpg"))
 
 
-        save_figures(output_path_global, nlls1, nlls2, "NLL", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, lls1, lls2, "log_likelihood", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, grads1, grads2, "GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, statgrads1, statgrads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
 
-        compute_roc_auc_scores(output_path_global, nlls1, nlls2, "NLL")
+        compute_roc_auc_scores(output_path_global, lls1, lls2, "log_likelihood")
         compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
         compute_roc_auc_scores(output_path_global, statgrads1, statgrads2, "statgrads")
 
@@ -79,11 +80,11 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
     np.random.seed(0)
     
     
-    nlls = {}
+    lls = {}
     grad_total = {}
     grad_stat_total = {}
     for k in range(nb_step+1):
-      nlls[k] = []
+      lls[k] = []
       grad_total[k] = []
       grad_stat_total[k] = []
 
@@ -101,11 +102,11 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
         x = x.to(device_test).unsqueeze(0)
         _, nll, _ = model_copy(x, y_onehot=None)
         nll.backward()
-        nlls[0].append(-nll.detach().cpu().item())
+        lls[0].append(-nll.detach().cpu().item())
         optimizer.step()
         for name_copy, param_copy in model_copy.named_parameters():
             if param_copy.grad is not None :
-                grads.append(param_copy.grad.view(-1))
+                grads.append(-param_copy.grad.view(-1))
         grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
 
 
@@ -126,14 +127,14 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
             diff_param = []
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
-            nlls[k].append(-nll.detach().cpu().item())
+            lls[k].append(-nll.detach().cpu().item())
             optimizer.step()
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                 assert(name_copy == name)
                 if param_copy.grad is not None :
                     aux_diff_param = param_copy.data - param.data
                     diff_param.append(aux_diff_param.view(-1))
-                    grads.append(param_copy.grad.view(-1))
+                    grads.append(-param_copy.grad.view(-1))
             grads = torch.flatten(torch.cat(grads))
             grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
             diff_param = torch.flatten(torch.cat(diff_param))
@@ -142,31 +143,31 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 
     for key in grad_total.keys():
       grad_total[key] = np.array(grad_total[key])
-      nlls[key] = np.array(nlls[key])
+      lls[key] = np.array(lls[key])
       grad_stat_total[key] = np.array(grad_stat_total[key])
 
         
-    return nlls, grad_total, grad_stat_total
+    return lls, grad_total, grad_stat_total
 
 
-def save_figures(output_path, nlls_1, nlls_2, prefix, dataset1_name, dataset2_name):
-    for key in nlls_1.keys():
+def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_name):
+    for key in input1.keys():
         print(f"Steps {key}")
-        print(f"{dataset2_name} NLL",np.mean(-nlls_2[key]))
-        print(f"{dataset1_name} NLL",np.mean(-nlls_1[key]))
+        print(f"{dataset2_name} {prefix}",np.mean(-input2[key]))
+        print(f"{dataset1_name} {prefix}",np.mean(-input1[key]))
 
 
         plt.figure(figsize=(20,10))
         plt.title(f"Histogram Glow - trained on {dataset1_name}")
-        plt.xlabel("Negative bits per dimension")
-        plt.hist(nlls_2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
-        plt.hist(nlls_1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
+        plt.xlabel(f"{prefix}")
+        plt.hist(input2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
+        plt.hist(input1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
         plt.legend()
         plt.savefig(os.path.join(output_path,f"{prefix}_Step{key}"))
         plt.close()
 
         plt.figure(figsize = (20,10))
-        plt.boxplot([nlls_2[key], nlls_1[key]], labels = [dataset2_name, f"{dataset1_name}"])
+        plt.boxplot([input2[key], input1[key]], labels = [dataset2_name, f"{dataset1_name}"])
         plt.savefig(os.path.join(output_path,f"{prefix}_BOXPLOT_Step{key}"))
         plt.close()
 
