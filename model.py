@@ -314,5 +314,5 @@ def load_model_from_param(path_param, path_weight, num_classes, image_shape):
              hparams['learn_top'], hparams['y_condition'])
 
 
-    model.load_state_dict(torch.load(path_weight)['model'])
+    model.load_state_dict(torch.load(path_weight))
     model.set_actnorm_init()
