@@ -301,6 +301,10 @@ class Glow(nn.Module):
             if isinstance(m, ActNorm2d):
                 m.inited = True
 
+
+
+import json
+
 def load_model_from_param(path_param, path_weight, num_classes, image_shape):
     with open(path_param) as json_file:  
         hparams = json.load(json_file)
