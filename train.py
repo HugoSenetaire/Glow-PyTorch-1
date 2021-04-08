@@ -256,11 +256,11 @@ def main(
 
     # load pre-trained model if given
     if saved_model:
-        model.load_state_dict(torch.load(saved_model))
+        model.load_state_dict(torch.load(saved_model)['model'])
         model.set_actnorm_init()
 
         if saved_optimizer:
-            optimizer.load_state_dict(torch.load(saved_optimizer))
+            optimizer.load_state_dict(torch.load(saved_optimizer)['opt'])
 
         file_name, ext = os.path.splitext(saved_model)
         resume_epoch = int(file_name.split("_")[-1])
@@ -324,6 +324,7 @@ def main(
     @trainer.on(Events.EPOCH_COMPLETED)
     def eval_likelihood(engine):
         global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = 1, every_epoch = every_epoch, lr=lr_test)
+
 
     trainer.run(train_loader, epochs)
 

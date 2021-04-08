@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
 
-from datasets import get_CIFAR10, get_SVHN, get_FashionMNIST, get_MNIST
+from datasets import get_CIFAR10, get_SVHN, get_FashionMNIST, get_MNIST, postprocess
 from model import Glow
 from torch import autograd
+from torchvision.utils import make_grid
 
 import tqdm
 import numpy as np
@@ -25,11 +26,24 @@ else :
     else :
         device_test = "cuda:0"
 
+def sample(model):
+    with torch.no_grad():
+        if hparams['y_condition']:
+            y = torch.eye(num_classes)
+            y = y.repeat(batch_size // num_classes + 1)
+            y = y[:32, :].to(device) # number hardcoded in model for now
+        else:
+            y = None
 
-def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dataset2_name = "SVHN", nb_step = 1, every_epoch = 10, lr = 1e-5):
+        images = postprocess(model(y_onehot=y, temperature=1, reverse=True))
+
+    return images.cpu()
+def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, nb_step = 1, every_epoch = 10, lr = 1e-5):
     if epoch % every_epoch == 0 :
         nlls1, grads1, statgrads1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
         nlls2, grads2, statgrads2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
+
+
 
 
         output_path_global = os.path.join(path,"graphs")
@@ -38,6 +52,13 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name = "CIFAR10", dat
         output_path_global = os.path.join(output_path_global, f"epoch{epoch}")
         if not os.path.exists(output_path_global):
             os.makedirs(output_path_global)
+
+        output_image = sample(model)
+        grid = make_grid(images[:30], nrow=6).permute(1,2,0)
+        plt.figure(figsize=(10,10))
+        plt.imshow(grid)
+        plt.axis('off')
+        plt.savefig(os.path.join(output_path_global,"samples.jpg"))
 
 
         save_figures(output_path_global, nlls1, nlls2, "NLL", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
@@ -69,6 +90,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 
 
     for x in tqdm.tqdm(data) :
+        # load weights.  print the weights.
         model_copy = copy.deepcopy(model).to(device_test)
         optimizer = optim.SGD(model_copy.parameters(), lr= lr, momentum = 0.)
         model_copy.zero_grad()
@@ -127,7 +149,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
     return nlls, grad_total, grad_stat_total
 
 
-def save_figures(output_path, nlls_1, nlls_2, prefix, dataset1_name = "CIFAR10", dataset2_name = "SVHN"):
+def save_figures(output_path, nlls_1, nlls_2, prefix, dataset1_name, dataset2_name):
     for key in nlls_1.keys():
         print(f"Steps {key}")
         print(f"{dataset2_name} NLL",np.mean(-nlls_2[key]))
