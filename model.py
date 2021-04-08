@@ -301,9 +301,8 @@ class Glow(nn.Module):
             if isinstance(m, ActNorm2d):
                 m.inited = True
 
-
 def load_model_from_param(path_param, path_weight, num_classes, image_shape):
-    with open('/content/drive/MyDrive/weights_glow/hparams.json') as json_file:  
+    with open(path_param) as json_file:  
         hparams = json.load(json_file)
 
     model = Glow(image_shape, hparams['hidden_channels'], hparams['K'], hparams['L'], hparams['actnorm_scale'],

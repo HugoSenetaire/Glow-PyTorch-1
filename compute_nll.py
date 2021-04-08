@@ -222,13 +222,13 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 ### Model with loading weights :
 
 
-def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, image_shape, num_classes, nb_step = 1, every_epoch = 10, lr = 1e-5):
+def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, pathmodel, nb_step = 1, every_epoch = 10, lr = 1e-5):
 
     if not os.path.exists(path):
         os.makedirs(path)
     torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
     pathweights = os.path.join(path,"current_tested_model.pth")
-    pathmodel = os.path.join(path, "hparams.json")
+
     
     if epoch % every_epoch == 0 :
         lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll_from_model(data1, pathmodel, pathweights, image_shape, num_classes, nb_step = 1, lr = 1e-5)
