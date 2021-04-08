@@ -87,6 +87,7 @@ def main(
     eval_batch_size,
     nlls_batch_size,
     epochs,
+    nb_step,
     saved_model,
     seed,
     hidden_channels,
@@ -323,7 +324,7 @@ def main(
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def eval_likelihood(engine):
-        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = 1, every_epoch = every_epoch, lr=lr_test)
+        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = nb_step, every_epoch = every_epoch, lr=lr_test)
 
 
     trainer.run(train_loader, epochs)
@@ -357,6 +358,12 @@ if __name__ == "__main__":
         action="store_false",
         dest="augment",
         help="Augment training data",
+    )
+
+    parser.add_argument(
+        "--nb_step",
+        type= int,
+        default=5,
     )
 
     parser.add_argument(
