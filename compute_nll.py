@@ -28,12 +28,8 @@ else :
 
 def sample(model):
     with torch.no_grad():
-        if hparams['y_condition']:
-            y = torch.eye(num_classes)
-            y = y.repeat(batch_size // num_classes + 1)
-            y = y[:32, :].to(device) # number hardcoded in model for now
-        else:
-            y = None
+
+        y = None
 
         images = postprocess(model(y_onehot=y, temperature=1, reverse=True))
 
