@@ -38,6 +38,9 @@ def sample(model):
 
     return images.cpu()
 
+
+
+
 def fischer_approximation(model, T = 1000, temperature = 1):
     total_grad = None
     with torch.no_grad():
@@ -46,13 +49,14 @@ def fischer_approximation(model, T = 1000, temperature = 1):
         list_img = model.flow(z, temperature=temperature, reverse=True)
 
     for x in list_img :
-        model.zero_grad()
-        _, nll, _ = model(x.unsqueeze(0))
+        model_copy = copy.deepcopy(model)
+        model_copy.zero_grad()
+        _, nll, _ = model_copy(x.unsqueeze(0))
         nll.backward()
         current_grad = []
-        for name, param in model.named_parameters():
-            if param.grad is not None :
-                current_grad.append(-param.grad.view(-1))
+        for name_copy, param_copy in model_copy.named_parameters():
+            if param_copy.grad is not None :
+                current_grad.append(-param_copy.grad.view(-1))
 
         current_grad = torch.cat(current_grad)**2
         if total_grad is None :
@@ -107,6 +111,7 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
         fischer_approximation_matrix[1000] = fischer_approximation(model)
         fischer_score_1 = calculate_score_statistic(data1, model, fischer_approximation_matrix)
         fischer_score_2 = calculate_score_statistic(data2, model, fischer_approximation_matrix) 
+        # print("No Fischer Score here")
 
         output_path_global = os.path.join(path,"graphs")
         if not os.path.exists(output_path_global):
@@ -237,7 +242,7 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
 
 
         fischer_approximation_matrix = {}
-        fischer_approximation_matrix[1000] = fischer_approximation(model)
+        fischer_approximation_matrix[1000] = fischer_approximation_from_model(model)
         fischer_score_1 = calculate_score_statistic_from_model(data1, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes)
         fischer_score_2 = calculate_score_statistic_from_model(data2, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes) 
 
@@ -268,6 +273,30 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
         compute_roc_auc_scores(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "LikelihoodRatio")
         compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "FischerScoreStats")
 
+def fischer_approximation_from_model(model, T = 1000, temperature = 1):
+    total_grad = None
+    with torch.no_grad():
+        mean, logs = model.prior(None,batch_size = T)
+        z = gaussian_sample(mean, logs, temperature = temperature)
+        list_img = model.flow(z, temperature=temperature, reverse=True)
+
+    for x in list_img :
+        model.zero_grad()
+        _, nll, _ = model(x.unsqueeze(0))
+        nll.backward()
+        current_grad = []
+        for name, param in model.named_parameters():
+            if param.grad is not None :
+                current_grad.append(-param.grad.view(-1))
+
+        current_grad = torch.cat(current_grad)**2
+        if total_grad is None :
+            total_grad = copy.deepcopy(current_grad)
+        else :
+            total_grad += current_grad
+    
+
+    return float(T)/total_grad
 
 def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_matrix, image_shape, num_classes):
     torch.random.manual_seed(0)
@@ -279,7 +308,7 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
 
     for x in tqdm.tqdm(data) :
         # load weights.  print the weights.
-        model = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
+        model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
         x = x.to(device_test).unsqueeze(0)
         grads = []
 
