@@ -223,13 +223,18 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 
 
 def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, image_shape, num_classes, nb_step = 1, every_epoch = 10, lr = 1e-5):
-    if epoch % every_epoch == 0 :
-        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
-        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
 
-        torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
-        pathweight = os.path.join(path,"current_tested_model.pth")
-        pathmodel = os.path.join(path, "hparams.json")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
+    pathweight = os.path.join(path,"current_tested_model.pth")
+    pathmodel = os.path.join(path, "hparams.json")
+    
+    if epoch % every_epoch == 0 :
+        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll_from_model(data1, pathmodel, pathweights, image_shape, num_classes, nb_step = 1, lr = 1e-5)
+        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll_from_model(data2, pathmodel, pathweights, image_shape, num_classes, nb_step = 1, lr = 1e-5)
+
+
 
         fischer_approximation_matrix = {}
         fischer_approximation_matrix[1000] = fischer_approximation(model)
