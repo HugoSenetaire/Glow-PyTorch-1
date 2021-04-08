@@ -38,8 +38,8 @@ def sample(model):
 
     return images.cpu()
 
-def fischer_approximation(model, T = 1000, temperature = None):
-    total_grad = []
+def fischer_approximation(model, T = 1000, temperature = 1):
+    total_grad = None
     with torch.no_grad():
         mean, logs = model.prior(None,batch_size = T)
         z = gaussian_sample(mean, logs, temperature = temperature)
@@ -54,12 +54,14 @@ def fischer_approximation(model, T = 1000, temperature = None):
             if param.grad is not None :
                 current_grad.append(-param.grad.view(-1))
 
-        current_grad = torch.cat(current_grad)
+        current_grad = torch.cat(current_grad**2)
+        if total_grad is None :
+            total_grad = copy.deepcopy(current_grad)
+        else :
+            total_grad += current_grad
     
-        total_grad.append(current_grad.unsqueeze(0))
-    
-    total_grad = torch.cat(total_grad, axis=0)    
-    return float(T)/torch.sum(total_grad**2, axis=0)
+
+    return float(T)/total_grad
 
 def calculate_score_statistic(data, model, fischer_matrix):
     torch.random.manual_seed(0)
