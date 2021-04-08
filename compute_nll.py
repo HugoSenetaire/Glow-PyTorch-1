@@ -222,7 +222,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 ### Model with loading weights :
 
 
-def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, pathmodel, nb_step = 1, every_epoch = 10, lr = 1e-5):
+def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, path_model, image_shape, num_classes, nb_step = 1, every_epoch = 10, lr = 1e-5):
 
     if not os.path.exists(path):
         os.makedirs(path)
