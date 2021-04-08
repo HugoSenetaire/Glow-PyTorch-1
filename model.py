@@ -243,12 +243,12 @@ class Glow(nn.Module):
             ),
         )
 
-    def prior(self, data, y_onehot=None):
+    def prior(self, data, y_onehot=None, batch_size = 32):
         if data is not None:
             h = self.prior_h.repeat(data.shape[0], 1, 1, 1)
         else:
             # Hardcoded a batch size of 32 here
-            h = self.prior_h.repeat(32, 1, 1, 1)
+            h = self.prior_h.repeat(batch_size, 1, 1, 1)
 
         channels = h.size(1)
 

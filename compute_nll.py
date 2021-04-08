@@ -11,6 +11,9 @@ from datasets import get_CIFAR10, get_SVHN, get_FashionMNIST, get_MNIST, postpro
 from model import Glow
 from torch import autograd
 from torchvision.utils import make_grid
+from modules import (
+    gaussian_sample,
+)
 
 import tqdm
 import numpy as np
@@ -35,13 +38,67 @@ def sample(model):
 
     return images.cpu()
 
+def fischer_approximation(model, T = 1000, temperature = None):
+    total_grad = []
+    with torch.no_grad():
+        mean, logs = model.prior(None,batch_size = T)
+        z = gaussian_sample(mean, logs, temperature = temperature)
+        list_img = model.flow(z, temperature=temperature, reverse=True)
+
+    for x in list_img :
+        model.zero_grad()
+        _, nll, _ = model(x.unsqueeze(0))
+        nll.backward()
+        current_grad = []
+        for name, param in model.named_parameters():
+            if param.grad is not None :
+                current_grad.append(-param.grad.view(-1))
+
+        current_grad = torch.cat(current_grad)
+    
+        total_grad.append(current_grad.unsqueeze(0))
+    
+    total_grad = torch.cat(total_grad, axis=0)    
+    return float(T)/torch.sum(total_grad**2, axis=0)
+
+def calculate_score_statistic(data, model, fischer_matrix):
+    torch.random.manual_seed(0)
+    np.random.seed(0)
+
+    for key in fischer_matrix.keys():
+        score[key]= []
+
+
+    for x in tqdm.tqdm(data) :
+        # load weights.  print the weights.
+        model_copy = copy.deepcopy(model).to(device_test)
+        model_copy.zero_grad()
+        x = x.to(device_test).unsqueeze(0)
+        grads = []
+
+        _, nll, _ = model_copy(x, y_onehot=None)
+        nll.backward()
+        for name_copy, param_copy in model_copy.named_parameters():
+            if param_copy.grad is not None :
+                grads.append(-param_copy.grad.view(-1))
+
+        for key in fischer_matrix.keys():
+            score[key].append(torch.sum(grads**2 * fischer_matrix[key]))
+
+    return score
+
+
+
+
 def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, nb_step = 1, every_epoch = 10, lr = 1e-5):
     if epoch % every_epoch == 0 :
-        lls1, grads1, statgrads1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
-        lls2, grads2, statgrads2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
+        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll(data1, model, nb_step = nb_step, lr = lr)
+        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll(data2, model, nb_step = nb_step, lr = lr)
 
-
-
+        fischer_approximation_matrix = {}
+        fischer_approximation_matrix[1000] = fischer_approximation(model)
+        fischer_score_1 = calculate_score_statistic(data1, model, fischer_approximation_matrix)
+        fischer_score_2 = calculate_score_statistic(data2, model, fischer_approximation_matrix) 
 
         output_path_global = os.path.join(path,"graphs")
         if not os.path.exists(output_path_global):
@@ -51,7 +108,7 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
             os.makedirs(output_path_global)
 
         output_image = sample(model)
-        grid = make_grid(images[:30], nrow=6).permute(1,2,0)
+        grid = make_grid(output_image[:30], nrow=6).permute(1,2,0)
         plt.figure(figsize=(10,10))
         plt.imshow(grid)
         plt.axis('off')
@@ -61,10 +118,14 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
         save_figures(output_path_global, lls1, lls2, "log_likelihood", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, grads1, grads2, "GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, statgrads1, statgrads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "Likelihood ratio", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        save_figures(output_path_global, fischer_score_1, fischer_score_2, "Score Stats", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
 
         compute_roc_auc_scores(output_path_global, lls1, lls2, "log_likelihood")
         compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
         compute_roc_auc_scores(output_path_global, statgrads1, statgrads2, "statgrads")
+        compute_roc_auc_scores(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "LikelihoodRatio")
+        compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "FischerScoreStats")
 
 
 
@@ -79,10 +140,13 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
     lls = {}
     grad_total = {}
     grad_stat_total = {}
+    likelihood_ratio_statistic = {}
+
     for k in range(nb_step+1):
       lls[k] = []
       grad_total[k] = []
       grad_stat_total[k] = []
+      likelihood_ratio_statistic[k] = []
 
 
 
@@ -140,10 +204,11 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
     for key in grad_total.keys():
       grad_total[key] = np.array(grad_total[key])
       lls[key] = np.array(lls[key])
+      likelihood_ratio_statistic[key] = lls[key] - lls[0]
       grad_stat_total[key] = np.array(grad_stat_total[key])
 
         
-    return lls, grad_total, grad_stat_total
+    return lls, grad_total, grad_stat_total, likelihood_ratio_statistic
 
 
 def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_name):
@@ -182,7 +247,7 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
         rocauc_score = roc_auc_score(label_total, result_total)
         test+= f"Result : {rocauc_score}, Result Reverse {1-rocauc_score} \n"
 
-    with open(os.path.join(output_path, f"{prefix}_auroc"), "a") as f :
+    with open(os.path.join(output_path, f"{prefix}_auroc.txt"), "a") as f :
         f.writelines(test)
 
 
