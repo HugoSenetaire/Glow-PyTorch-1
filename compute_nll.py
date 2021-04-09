@@ -65,7 +65,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
             total_grad += current_grad
     
 
-    return float(T)/total_grad
+    return float(T)/(total_grad+1e-8)
 
 def calculate_score_statistic(data, model, fischer_matrix):
     torch.random.manual_seed(0)
@@ -197,7 +197,6 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
 
         for k in range(1,nb_step+1):
             model_copy.zero_grad()
-            grads = []
             diff_param = []
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
@@ -208,8 +207,7 @@ def compute_nll(data, model, nb_step = 1, lr = 1e-5):
                 if param_copy.grad is not None :
                     aux_diff_param = param_copy.data - param.data
                     diff_param.append(aux_diff_param.view(-1))
-                    grads.append(-param_copy.grad.view(-1))
-            grads = torch.flatten(torch.cat(grads))
+
             grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
             diff_param = torch.flatten(torch.cat(diff_param))
             grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
@@ -297,7 +295,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1):
             total_grad += current_grad
     
 
-    return float(T)/total_grad
+    return float(T)/(total_grad+1e-8)
 
 def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_matrix, image_shape, num_classes):
     torch.random.manual_seed(0)
@@ -382,7 +380,6 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
 
         for k in range(1,nb_step+1):
             model_copy.zero_grad()
-            grads = []
             diff_param = []
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
@@ -393,8 +390,6 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                 if param_copy.grad is not None :
                     aux_diff_param = param_copy.data - param.data
                     diff_param.append(aux_diff_param.view(-1))
-                    grads.append(-param_copy.grad.view(-1))
-            grads = torch.flatten(torch.cat(grads))
             grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
             diff_param = torch.flatten(torch.cat(diff_param))
             grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
