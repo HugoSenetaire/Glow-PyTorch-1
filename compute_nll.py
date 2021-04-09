@@ -89,10 +89,10 @@ def calculate_score_statistic(data, model, fischer_matrix):
                 grads.append(-param_copy.grad.view(-1))
         grads = torch.cat(grads)
         for key in fischer_matrix.keys():
-            score[key].append(torch.mean(grads**2 * fischer_matrix[key]))
+            score[key].append(torch.mean(grads**2 * fischer_matrix[key]).detach().cpu().numpy())
 
     for key in fischer_matrix.keys():
-        score[key] = torch.cat(score[key]).detach().cpu().numpy()
+        score[key] = np.array(score[key])
 
     return score
 
@@ -318,10 +318,10 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
                 grads.append(-param_copy.grad.view(-1))
         grads = torch.cat(grads)
         for key in fischer_matrix.keys():
-            score[key].append(torch.mean(grads**2 * fischer_matrix[key]))
+            score[key].append(torch.mean(grads**2 * fischer_matrix[key]).detach().cpu().numpy())
 
     for key in fischer_matrix.keys():
-        score[key] = torch.cat(score[key]).detach().cpu().numpy()
+        score[key] = np.array(score[key])
 
     return score
 
