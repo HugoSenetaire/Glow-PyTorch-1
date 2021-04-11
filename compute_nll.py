@@ -59,6 +59,9 @@ def fischer_approximation(model, T = 1000, temperature = 1):
                 current_grad.append(-param_copy.grad.view(-1))
 
         current_grad = torch.cat(current_grad)**2
+        if torch.isinf(current_grad) :
+            T-=1
+            continue
         if total_grad is None :
             total_grad = copy.deepcopy(current_grad)
         else :
@@ -235,8 +238,8 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
 
     
     if epoch % every_epoch == 0 :
-        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll_from_model(data1, pathmodel, pathweights, image_shape, num_classes, nb_step = 1, lr = 1e-5)
-        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll_from_model(data2, pathmodel, pathweights, image_shape, num_classes, nb_step = 1, lr = 1e-5)
+        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll_from_model(data1, pathmodel, pathweights, image_shape, num_classes, nb_step = nb_step, lr = lr)
+        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll_from_model(data2, pathmodel, pathweights, image_shape, num_classes, nb_step = nb_step, lr = lr)
 
 
 
@@ -289,6 +292,9 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1):
                 current_grad.append(-param.grad.view(-1))
 
         current_grad = torch.cat(current_grad)**2
+        if torch.isinf(current_grad) :
+            T-=1
+            continue
         if total_grad is None :
             total_grad = copy.deepcopy(current_grad)
         else :
