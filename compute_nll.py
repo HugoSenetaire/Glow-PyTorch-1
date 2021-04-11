@@ -59,7 +59,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
                 current_grad.append(-param_copy.grad.view(-1))
 
         current_grad = torch.cat(current_grad)**2
-        if torch.isinf(current_grad) :
+        if torch.isinf(current_grad).any() :
             T-=1
             continue
         if total_grad is None :
@@ -292,7 +292,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1):
                 current_grad.append(-param.grad.view(-1))
 
         current_grad = torch.cat(current_grad)**2
-        if torch.isinf(current_grad) :
+        if torch.isinf(current_grad).any() :
             T-=1
             continue
         if total_grad is None :
