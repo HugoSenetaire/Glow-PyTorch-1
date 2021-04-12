@@ -573,7 +573,7 @@ if __name__ == "__main__":
     
 
     args = parser.parse_args()
-    args = vars(args)
+    # args = vars(args)
     
     device = torch.device("cuda")
 
