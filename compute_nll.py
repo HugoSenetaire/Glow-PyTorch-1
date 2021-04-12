@@ -160,7 +160,7 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
             for name_copy, param_copy in model_copy.named_parameters():
                 if param_copy.grad is not None :
                     grads.append(-param_copy.grad.view(-1))
-            grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
+            grad_total[0].append(torch.sum(optim_default["lr"] * (torch.cat(grads)**2)).detach().cpu().item())
 
 
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
@@ -187,7 +187,7 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
                         aux_diff_param = param_copy.data - param.data
                         diff_param.append(aux_diff_param.view(-1))
 
-                grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
+                grad_total[k].append(torch.sum((grads **2)*optim_default["lr"]).detach().cpu().item())
                 diff_param = torch.flatten(torch.cat(diff_param))
                 grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
            
@@ -287,7 +287,7 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
             for name_copy, param_copy in model_copy.named_parameters():
                 if param_copy.grad is not None :
                     grads.append(-param_copy.grad.view(-1))
-            grad_total[0].append(torch.sum(lr * (torch.cat(grads)**2)).detach().cpu().item())
+            grad_total[0].append(torch.sum(optim_default["lr"] * (torch.cat(grads)**2)).detach().cpu().item())
 
 
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
@@ -313,7 +313,7 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                     if param_copy.grad is not None :
                         aux_diff_param = param_copy.data - param.data
                         diff_param.append(aux_diff_param.view(-1))
-                grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
+                grad_total[k].append(torch.sum((grads **2)*optim_default["lr"]).detach().cpu().item())
                 diff_param = torch.flatten(torch.cat(diff_param))
                 grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
            
