@@ -29,6 +29,30 @@ import tqdm
 import numpy as np
 import copy
 import os
+def check_manual_seed(seed):
+    seed = seed or random.randint(1, 10000)
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    print("Using seed: {seed}".format(seed=seed))
+
+
+def check_dataset(dataset, dataroot, augment, download):
+    if dataset == "cifar10":
+        cifar10 = get_CIFAR10(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = cifar10
+    if dataset == "svhn":
+        svhn = get_SVHN(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = svhn
+    if dataset == "mnist":
+        mnist = get_MNIST(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = mnist
+    if dataset == "fashionmnist":
+        fashionmnist = get_FashionMNIST(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = fashionmnist
+
+    return input_size, num_classes, train_dataset, test_dataset
+
 
 
 if (not torch.cuda.is_available()) :
