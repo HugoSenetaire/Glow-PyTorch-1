@@ -563,9 +563,11 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
         result_1 = list_1[key]
         if np.isinf(result_1).any() or np.isnan(result_1).any():
             print(f"Inf in the result for {prefix} step {key}")
+            test+= f"Inf in the result \n"
             continue
         if np.isinf(result_2).any() or np.isnan(result_2).any():
             print(f"Inf in the result for {prefix} step {key}")
+            test+= f"Inf in the result \n"
             continue
 
         label_1 = np.ones(np.shape(result_1))
