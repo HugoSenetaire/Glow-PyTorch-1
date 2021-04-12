@@ -126,9 +126,6 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
     torch.random.manual_seed(0)
     np.random.seed(0)
     
-    for param_group in optimizer.param_groups:
-        lr = param_group['lr']
-        break
 
     lls = {}
     grad_total = {}
@@ -150,6 +147,10 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
             optimizer = optim_default(model_copy.parameters())
+            for param_group in optimizer.param_groups:
+                lr = param_group['lr']
+                break
+
             model_copy.zero_grad()
 
 
@@ -260,9 +261,6 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
     grad_stat_total = {}
     likelihood_ratio_statistic = {}
 
-    for param_group in optimizer.param_groups:
-        lr = param_group['lr']
-        break
 
 
     for k in range(nb_step+1):
@@ -282,6 +280,10 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
             optimizer = optim_default(model_copy.parameters())
+            for param_group in optimizer.param_groups:
+                lr = param_group['lr']
+                break
+
             model_copy.zero_grad()
 
 
