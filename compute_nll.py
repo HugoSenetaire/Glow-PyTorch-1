@@ -539,7 +539,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--dataroot", type=str, help="path to dataset")
-    parser.add_argument("--model_path", type=str, "path to model saved weights")
+    parser.add_argument("--model_path", type=str, help = "path to model saved weights")
     parser.add_argument("--checkpoint", type = str)
 
     parser.add_argument(
