@@ -577,7 +577,7 @@ if __name__ == "__main__":
     checkpoint_path = os.path.join(model_path, args.checkpoint)
     params_path = os.path.join(model_path, 'hparams.json')
     
-    with open(os.path.join(model_path, 'hparams.json') as json_file:  
+    with open(os.path.join(model_path, 'hparams.json')) as json_file:  
         hparams = json.load(json_file)
 
     
