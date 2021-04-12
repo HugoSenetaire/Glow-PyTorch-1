@@ -84,12 +84,6 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
         lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll(data2, model, nb_step = nb_step, optim_default = optim_default, dataloader = dataloader)
 
 
-
-        fischer_approximation_matrix = {}
-        fischer_approximation_matrix[1000] = fischer_approximation(model)
-        fischer_score_1 = calculate_score_statistic(data1, model, fischer_approximation_matrix, dataloader = dataloader)
-        fischer_score_2 = calculate_score_statistic(data2, model, fischer_approximation_matrix, dataloader = dataloader) 
-
         output_path_global = os.path.join(path,"graphs")
         if not os.path.exists(output_path_global):
             os.makedirs(output_path_global)
@@ -109,13 +103,11 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
         save_figures(output_path_global, grads1, grads2, "GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, statgrads1, statgrads2, "STAT_GRADS",dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         save_figures(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "Likelihood ratio", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
-        save_figures(output_path_global, fischer_score_1, fischer_score_2, "Score Stats", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
 
         compute_roc_auc_scores(output_path_global, lls1, lls2, "log_likelihood")
         compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
         compute_roc_auc_scores(output_path_global, statgrads1, statgrads2, "statgrads")
         compute_roc_auc_scores(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "LikelihoodRatio")
-        compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "FischerScoreStats")
 
 
 
