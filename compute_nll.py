@@ -123,6 +123,7 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
 
 
 def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=1e-5, momentum=0.), dataloader = False):
+    print("Compute NLL")
     torch.random.manual_seed(0)
     np.random.seed(0)
     
@@ -252,6 +253,9 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
 
 
 def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classes, nb_step = 5, optim_default = partial(optim.SGD, lr=1e-5, momentum=0.), dataloader = False):
+    
+    
+    print("Compute NLL from Model")
     torch.random.manual_seed(0)
     np.random.seed(0)
     
@@ -343,6 +347,7 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
 
 
 def global_fischer_stats(path, epoch, data1, data2, model, dataset1_name, dataset2_name, nb_step = 1, T_list = [1000], every_epoch = 10, dataloader = False):
+    print("Fischer Stats")
     if epoch % every_epoch == 0 :
 
         fischer_approximation_matrix = {}
@@ -367,6 +372,7 @@ def global_fischer_stats(path, epoch, data1, data2, model, dataset1_name, datase
 
 
 def fischer_approximation(model, T = 1000, temperature = 1):
+    print("Fischer Approximation")
     total_grad = None
     with torch.no_grad():
         mean, logs = model.prior(None,batch_size = T)
@@ -396,6 +402,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
     return float(T)/(total_grad+1e-8)
 
 def calculate_score_statistic(data, model, fischer_matrix, dataloader = False):
+    print("Score Stats")
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
