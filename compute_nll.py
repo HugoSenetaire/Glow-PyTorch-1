@@ -19,7 +19,7 @@ from modules import (
     gaussian_sample,
 )
 
-import partial
+from functools import partial
 import torch.optim as optim
 import tqdm
 import numpy as np
