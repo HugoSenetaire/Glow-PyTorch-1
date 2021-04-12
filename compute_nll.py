@@ -317,6 +317,7 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                     lls[k].append(-nll.detach().cpu().item())
                 else :
                     print("INF NLL")
+                    lls[k].append(torch.sign(nll).detach().cpu().item() * 1e8)
   
                 optimizer.step()
                 for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
