@@ -561,10 +561,10 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
     for key in list_1.keys():
         test+= f"For step {key} \n "
         result_1 = list_1[key]
-        if np.isinf(result_1) or np.isnan(result_1):
+        if np.isinf(result_1).any() or np.isnan(result_1).any():
             print(f"Inf in the result for {prefix} step {key}")
             continue
-        if np.isint(result_2) or np.isnan(result_2):
+        if np.isinf(result_2).any() or np.isnan(result_2).any():
             print(f"Inf in the result for {prefix} step {key}")
             continue
 
