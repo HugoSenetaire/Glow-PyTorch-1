@@ -565,13 +565,14 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
             print(f"Inf in the result for {prefix} step {key}")
             test+= f"Inf in the result \n"
             continue
+       
+
+        label_1 = np.ones(np.shape(result_1))
+        result_2 = list_2[key]
         if np.isinf(result_2).any() or np.isnan(result_2).any():
             print(f"Inf in the result for {prefix} step {key}")
             test+= f"Inf in the result \n"
             continue
-
-        label_1 = np.ones(np.shape(result_1))
-        result_2 = list_2[key]
         label_2 = np.zeros(np.shape(result_2))
         label_total = np.concatenate((label_1, label_2))
         result_total = np.concatenate((result_1, result_2))
