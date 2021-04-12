@@ -244,7 +244,7 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
 
 
 
-def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classes, nb_step = 5, optim_default = partial(optim.SGD, lr=1e-5, momentum=0.), dataloader = False):
+def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classes, nb_step = 5, optim_default = partial(optim.SGD, lr=5e-5, momentum=0.), dataloader = False):
     
     
     print("Compute NLL from Model")
@@ -561,6 +561,12 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
     for key in list_1.keys():
         test+= f"For step {key} \n "
         result_1 = list_1[key]
+        if np.isinf(result_1) or np.isnan(result_1):
+            print(f"Inf in the result for {prefix} step {key}")
+            continue
+        if np.isint(result_2) or np.isnan(result_2):
+            print(f"Inf in the result for {prefix} step {key}")
+
         label_1 = np.ones(np.shape(result_1))
         result_2 = list_2[key]
         label_2 = np.zeros(np.shape(result_2))
