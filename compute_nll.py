@@ -258,10 +258,10 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
     likelihood_ratio_statistic = {}
 
 
-
+    grad_total[0] = []
     for k in range(nb_step+1):
       lls[k] = []
-      grad_total[k] = []
+    #   grad_total[k] = []
       grad_stat_total[k] = []
       likelihood_ratio_statistic[k] = []
 
@@ -303,7 +303,8 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                     diff_param.append(aux_diff_param.view(-1))
             grads = torch.flatten(torch.cat(grads))
             diff_param = torch.flatten(torch.cat(diff_param))
-            grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
+            if not torch.isinf(torch.abs(torch.dot(grads, diff_param))).any(): 
+                grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
 
 
 
@@ -312,20 +313,27 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                 diff_param = []
                 _, nll, _ = model_copy(x, y_onehot=None)
                 nll.backward()
-                lls[k].append(-nll.detach().cpu().item())
+                if not torch.isinf(-nll).any():
+                    lls[k].append(-nll.detach().cpu().item())
+                else :
+                    print("INF NLL")
+  
                 optimizer.step()
                 for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                     assert(name_copy == name)
                     if param_copy.grad is not None :
                         aux_diff_param = param_copy.data - param.data
                         diff_param.append(aux_diff_param.view(-1))
-                grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
                 diff_param = torch.flatten(torch.cat(diff_param))
+
+                if not torch.isinf(torch.abs(torch.dot(grads, diff_param))).any(): 
+                    grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
+                else :
+                    print("Inf grad stat")
                 grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
            
-
-    for key in grad_total.keys():
-      grad_total[key] = np.array(grad_total[key])
+    grad_total[0] = np.array(grad_total[0])
+    for key in grad_stat_total.keys():
       lls[key] = np.array(lls[key])
       likelihood_ratio_statistic[key] = lls[key] - lls[0]
       grad_stat_total[key] = np.array(grad_stat_total[key])
@@ -344,8 +352,6 @@ def global_fischer_stats(path, epoch, data1, data2, model, dataset1_name, datase
 
         fischer_approximation_matrix = {}
         for T in T_list :
-            print(T_list)
-            print(T)
             fischer_approximation_matrix[T] = fischer_approximation(model, T = T)
         fischer_score_1 = calculate_score_statistic(data1, model, fischer_approximation_matrix, dataloader = dataloader)
         fischer_score_2 = calculate_score_statistic(data2, model, fischer_approximation_matrix, dataloader = dataloader) 
@@ -503,7 +509,6 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
             x = x.to(device_test).unsqueeze(0)
             grads = []
-
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
             for name_copy, param_copy in model_copy.named_parameters():
@@ -511,7 +516,9 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
                     grads.append(-param_copy.grad.view(-1))
             grads = torch.cat(grads)
             for key in fischer_matrix.keys():
-                score[key].append(torch.mean(grads**2 * fischer_matrix[key]).detach().cpu().numpy())
+                score_aux = torch.mean(grads**2 * fischer_matrix[key]
+                if not torch.isinf(score_aux):
+                    score[key].append(score_aux).detach().cpu().numpy())
 
     for key in fischer_matrix.keys():
         score[key] = np.array(score[key])
@@ -524,9 +531,12 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
 
 def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_name):
     for key in input1.keys():
+        
         print(f"Steps {key}")
         print(f"{dataset2_name} {prefix}",np.mean(-input2[key]))
         print(f"{dataset1_name} {prefix}",np.mean(-input1[key]))
+
+        
 
 
         plt.figure(figsize=(20,10))
@@ -682,7 +692,7 @@ if __name__ == "__main__":
     path2 = os.path.join(path, "nlls_with_loader")
     path3 = os.path.join(path, "fischer_score_deepcopy")
     path4 = os.path.join(path, "fischer_score_loader")
-    global_nlls(path1, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
+    # global_nlls(path1, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
     global_nlls_from_model(path2, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
-    global_fischer_stats(path3, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list = T_list, every_epoch = 1, dataloader = dataloader)
+    # global_fischer_stats(path3, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list = T_list, every_epoch = 1, dataloader = dataloader)
     global_fisher_stat_from_model(path4, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
