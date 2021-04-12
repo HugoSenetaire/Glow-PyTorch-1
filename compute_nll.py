@@ -519,7 +519,7 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
             for key in fischer_matrix.keys():
                 score_aux = torch.mean(grads**2 * fischer_matrix[key])
                 if not torch.isinf(score_aux).any():
-                    score[key].append(score_aux).detach().cpu().numpy()
+                    score[key].append(score_aux.detach().cpu().numpy())
 
     for key in fischer_matrix.keys():
         score[key] = np.array(score[key])
