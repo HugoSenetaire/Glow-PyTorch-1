@@ -575,6 +575,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataroot", type=str, help="path to dataset")
     parser.add_argument("--model_path", type=str, help = "path to model saved weights")
     parser.add_argument("--checkpoint", type = str)
+    parser.add_argument("--download", action='store_true')
 
     parser.add_argument(
         "--batch_size", type=int, default=64, help="batch size used during training"
@@ -617,8 +618,8 @@ if __name__ == "__main__":
     
         
 
-    ds = check_dataset(args.dataset, args.dataroot, True, False)
-    ds2 = check_dataset(args.dataset2, args.dataroot, True, False)
+    ds = check_dataset(args.dataset, args.dataroot, True, args.download)
+    ds2 = check_dataset(args.dataset2, args.dataroot, True, args.download)
     image_shape, num_classes, train_dataset, test_dataset = ds
     image_shape2, num_classes2, train_dataset_2, test_dataset_2 = ds2
 
