@@ -585,7 +585,7 @@ if __name__ == "__main__":
         "--output_dir", type = str
     )
 
-    parser.add_argument("--limited_data", default = None)
+    parser.add_argument("--limited_data", type=int, default = None)
     parser.add_argument("--lr_test", type=float, default = 1e-5, help="Learning rate for the evaluation of ood")
 
 
