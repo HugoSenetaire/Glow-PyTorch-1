@@ -347,6 +347,8 @@ def global_fischer_stats(path, epoch, data1, data2, model, dataset1_name, datase
 
         fischer_approximation_matrix = {}
         for T in T_list :
+            print(T_list)
+            print(T)
             fischer_approximation_matrix[T] = fischer_approximation(model, T = T)
         fischer_score_1 = calculate_score_statistic(data1, model, fischer_approximation_matrix, dataloader = dataloader)
         fischer_score_2 = calculate_score_statistic(data2, model, fischer_approximation_matrix, dataloader = dataloader) 
@@ -677,8 +679,11 @@ if __name__ == "__main__":
     path = args.output_dir
     epoch = 1
 
-
-    global_nlls(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
-    global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, nb_step = 1, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
-    global_fischer_stats(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, T_list = T_list, every_epoch = 1, dataloader = dataloader)
-    global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
+    path1 = os.path.join(path, "nlls_with_deepcopy")
+    path2 = os.path.join(path, "nlls_with_loader")
+    path3 = os.path.join(path, "fischer_score_deepcopy")
+    path4 = os.path.join(path, "fischer_score_loader")
+    global_nlls(path1, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
+    global_nlls_from_model(path2, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, nb_step = 1, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
+    global_fischer_stats(path3, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, T_list = T_list, every_epoch = 1, dataloader = dataloader)
+    global_fisher_stat_from_model(path4, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
