@@ -90,7 +90,7 @@ def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, 
 
 
 
-def compute_nll(dataloader, model, nb_step = 1, optim_default = partial(optim.SGD, lr=1e-5, momentum=0.), dataloader = False):
+def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=1e-5, momentum=0.), dataloader = False):
     torch.random.manual_seed(0)
     np.random.seed(0)
     
@@ -107,11 +107,11 @@ def compute_nll(dataloader, model, nb_step = 1, optim_default = partial(optim.SG
       likelihood_ratio_statistic[k] = []
 
     if not dataloader :
-        dataloader_aux = [dataloader]
+        dataloader_aux = [data]
     else :
         dataloader_aux = iter(dataloader)
-    for data in tqdm.tqdm(dataloader_aux) :
-        for x in data :
+    for data_list in tqdm.tqdm(dataloader_aux) :
+        for x in data_list :
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
             optimizer = optim_default(model_copy.parameters())
@@ -234,11 +234,11 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
     model = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
 
     if not dataloader :
-        dataloader_aux = [dataloader]
+        dataloader_aux = [data]
     else :
         dataloader_aux = iter(dataloader)
-    for data in dataloader_aux :
-        for x in tqdm.tqdm(data) :
+    for data_list in tqdm.tqdm(dataloader_aux) :
+        for x in data_list :
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
             optimizer = optim_default(model_copy.parameters())
@@ -351,7 +351,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
 
     return float(T)/(total_grad+1e-8)
 
-def calculate_score_statistic(dataloader, model, fischer_matrix, dataloader = False):
+def calculate_score_statistic(data, model, fischer_matrix, dataloader = False):
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
@@ -359,11 +359,11 @@ def calculate_score_statistic(dataloader, model, fischer_matrix, dataloader = Fa
         score[key]= []
 
     if not dataloader :
-        dataloader_aux = [dataloader]
+        dataloader_aux = [data]
     else :
         dataloader_aux = iter(dataloader)
-    for data in dataloader_aux :
-        for x in tqdm.tqdm(data) :
+    for data_list in tqdm.tqdm(dataloader_aux) :
+        for x in data_list :
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
             model_copy.zero_grad()
@@ -444,7 +444,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1):
 
     return float(T)/(total_grad+1e-8)
 
-def calculate_score_statistic_from_model(dataloader, pathmodel, pathweights, fischer_matrix, image_shape, num_classes, dataloader = False):
+def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_matrix, image_shape, num_classes, dataloader = False):
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
@@ -452,11 +452,11 @@ def calculate_score_statistic_from_model(dataloader, pathmodel, pathweights, fis
         score[key]= []
 
     if not dataloader :
-        dataloader_aux = [dataloader]
+        dataloader_aux = [data]
     else :
         dataloader_aux = iter(dataloader)
-    for data in dataloader_aux :
-        for x in tqdm.tqdm(data) :
+    for data_list in tqdm.tqdm(dataloader_aux) :
+        for x in data_list :
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
             x = x.to(device_test).unsqueeze(0)
