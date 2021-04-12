@@ -347,7 +347,7 @@ def global_fischer_stats(path, epoch, data1, data2, model, dataset1_name, datase
 
         fischer_approximation_matrix = {}
         for T in T_list :
-            fischer_approximation_matrix[T] = fischer_approximation(model)
+            fischer_approximation_matrix[T] = fischer_approximation(model, T = T)
         fischer_score_1 = calculate_score_statistic(data1, model, fischer_approximation_matrix, dataloader = dataloader)
         fischer_score_2 = calculate_score_statistic(data2, model, fischer_approximation_matrix, dataloader = dataloader) 
 
@@ -371,7 +371,7 @@ def fischer_approximation(model, T = 1000, temperature = 1):
         z = gaussian_sample(mean, logs, temperature = temperature)
         list_img = model.flow(z, temperature=temperature, reverse=True)
 
-    for x in list_img :
+    for x in tqdm.tqdm(list_img) :
         model_copy = copy.deepcopy(model)
         model_copy.zero_grad()
         _, nll, _ = model_copy(x.unsqueeze(0))
@@ -440,7 +440,6 @@ def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_nam
 
     
     if epoch % every_epoch == 0 :
-
         fischer_approximation_matrix = {}
         for T in T_list :
             fischer_approximation_matrix[T] = fischer_approximation_from_model(model, T=T)
