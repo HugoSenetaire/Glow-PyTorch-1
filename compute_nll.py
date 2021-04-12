@@ -7,21 +7,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
 
+
+import torch.utils.data as data
 from datasets import get_CIFAR10, get_SVHN, get_FashionMNIST, get_MNIST, postprocess
 from model import Glow, load_model_from_param
+from datasets import get_CIFAR10, get_SVHN, get_MNIST, get_FashionMNIST 
+
 from torch import autograd
 from torchvision.utils import make_grid
 from modules import (
     gaussian_sample,
 )
 
-
+import partial
 import torch.optim as optim
 import tqdm
 import numpy as np
-import torch.optim as optim
 import copy
 import os
+
 
 if (not torch.cuda.is_available()) :
     device_test = "cpu"
