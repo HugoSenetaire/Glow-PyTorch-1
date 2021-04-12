@@ -139,10 +139,10 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
       likelihood_ratio_statistic[k] = []
 
     if not dataloader :
-        dataloader_aux = [data]
+        dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = iter(dataloader)
-    for data_list in tqdm.tqdm(dataloader_aux) :
+        dataloader_aux = tqdm.tqdm(iter(dataloader))
+    for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
@@ -272,10 +272,10 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
     model = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
 
     if not dataloader :
-        dataloader_aux = [data]
+        dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = iter(dataloader)
-    for data_list in tqdm.tqdm(dataloader_aux) :
+        dataloader_aux = tqdm.tqdm(iter(dataloader))
+    for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
@@ -401,10 +401,10 @@ def calculate_score_statistic(data, model, fischer_matrix, dataloader = False):
         score[key]= []
 
     if not dataloader :
-        dataloader_aux = [data]
+        dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = iter(dataloader)
-    for data_list in tqdm.tqdm(dataloader_aux) :
+        dataloader_aux = tqdm.tqdm(iter(dataloader))
+    for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
@@ -494,10 +494,10 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
         score[key]= []
 
     if not dataloader :
-        dataloader_aux = [data]
+        dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = iter(dataloader)
-    for data_list in tqdm.tqdm(dataloader_aux) :
+        dataloader_aux = tqdm.tqdm(iter(dataloader))
+    for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
@@ -681,5 +681,5 @@ if __name__ == "__main__":
 
     global_nlls(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
     global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, nb_step = 1, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
-    global_fischer_stats(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, T_list = [1000], every_epoch = 1, dataloader = dataloader)
-    global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = [1000], every_epoch = 1, dataloader = dataloader)
+    global_fischer_stats(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = 1, T_list = T_list, every_epoch = 1, dataloader = dataloader)
+    global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
