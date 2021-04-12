@@ -530,6 +530,8 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "--dataset",
         type=str,
