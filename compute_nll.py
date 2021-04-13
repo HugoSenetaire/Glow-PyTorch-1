@@ -657,7 +657,7 @@ if __name__ == "__main__":
                 hparams['flow_permutation'], hparams['flow_coupling'], hparams['LU_decomposed'], num_classes,
                 hparams['learn_top'], hparams['y_condition'])
     
-    dic = orch.load(checkpoint_path)
+    dic = torch.load(checkpoint_path)
     if 'model' in dic.keys():
         model.load_state_dict(dic["model"])
     else :
