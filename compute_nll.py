@@ -137,6 +137,8 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
         dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
+            if dataloader :
+                x = x[0]
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
             optimizer = optim_default(model_copy.parameters())
@@ -273,6 +275,8 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
         dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
+            if dataloader :
+                x = x[0]
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
             optimizer = optim_default(model_copy.parameters())
@@ -414,6 +418,8 @@ def calculate_score_statistic(data, model, fischer_matrix, dataloader = False):
         dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
+            if dataloader :
+                x = x[0]
             # load weights.  print the weights.
             model_copy = copy.deepcopy(model).to(device_test)
             model_copy.zero_grad()
@@ -507,6 +513,8 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, inv_fisch
         dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
+            if dataloader :
+                x = x[0]
             # load weights.  print the weights.
             model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
             x = x.to(device_test).unsqueeze(0)
