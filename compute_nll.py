@@ -134,7 +134,7 @@ def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=
     if not dataloader :
         dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = tqdm.tqdm(iter(dataloader))
+        dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
@@ -270,7 +270,7 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
     if not dataloader :
         dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = tqdm.tqdm(iter(dataloader))
+        dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
@@ -411,7 +411,7 @@ def calculate_score_statistic(data, model, fischer_matrix, dataloader = False):
     if not dataloader :
         dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = tqdm.tqdm(iter(dataloader))
+        dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
@@ -504,7 +504,7 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, inv_fisch
     if not dataloader :
         dataloader_aux = [tqdm.tqdm(data)]
     else :
-        dataloader_aux = tqdm.tqdm(iter(dataloader))
+        dataloader_aux = tqdm.tqdm(iter(data))
     for data_list in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
