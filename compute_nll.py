@@ -706,4 +706,5 @@ if __name__ == "__main__":
     # global_nlls(path1, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
     global_nlls_from_model(path2, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
     # global_fischer_stats(path3, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list = T_list, every_epoch = 1, dataloader = dataloader)
-    global_fisher_stat_from_model(path4, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
+    if len(T_list)>0 :
+        global_fisher_stat_from_model(path4, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
