@@ -658,8 +658,8 @@ if __name__ == "__main__":
     model = Glow(image_shape, hparams['hidden_channels'], hparams['K'], hparams['L'], hparams['actnorm_scale'],
                 hparams['flow_permutation'], hparams['flow_coupling'], hparams['LU_decomposed'], num_classes,
                 hparams['learn_top'], hparams['y_condition'])
-
-    model.load_state_dict(torch.load(checkpoint_path)['model'])
+    
+    model.load_state_dict(torch.load(checkpoint_path))
     model.set_actnorm_init()
 
     model = model.to(device)
