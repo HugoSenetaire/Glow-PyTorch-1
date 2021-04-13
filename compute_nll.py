@@ -657,7 +657,11 @@ if __name__ == "__main__":
                 hparams['flow_permutation'], hparams['flow_coupling'], hparams['LU_decomposed'], num_classes,
                 hparams['learn_top'], hparams['y_condition'])
     
-    model.load_state_dict(torch.load(checkpoint_path))
+    dic = orch.load(checkpoint_path)
+    if 'model' in dic.keys():
+        model.load_state_dict(dic["model"])
+    else :
+        model.load_state_dict(dic)
     model.set_actnorm_init()
 
     model = model.to(device)
@@ -683,14 +687,14 @@ if __name__ == "__main__":
             test_dataset,
             batch_size=args.batch_size,
             shuffle=False,
-            num_workers=n_workers,
+            num_workers=6,
             drop_last=False,
         )
         data2 = data.DataLoader(
             test_dataset_2,
             batch_size=args.batch_size,
             shuffle=False,
-            num_workers=n_workers,
+            num_workers=6,
             drop_last=False,
         )
 
