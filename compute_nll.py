@@ -328,15 +328,15 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                 diff_param = torch.flatten(torch.cat(diff_param))
 
                 if not torch.isinf(torch.abs(torch.dot(grads, diff_param))).any(): 
-                    grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
+                    grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
                 else :
                     print("Inf grad stat")
-                grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
            
     grad_total[0] = np.array(grad_total[0])
     for key in grad_stat_total.keys():
       lls[key] = np.array(lls[key])
       likelihood_ratio_statistic[key] = lls[key] - lls[0]
+      likelihood_ratio_statistic[key] = likelihood_ratio_statistic[key][np.where(np.abs(likelihood_ratio_statistic[key])<1e7)]
       grad_stat_total[key] = np.array(grad_stat_total[key])
 
         
