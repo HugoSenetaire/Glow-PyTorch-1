@@ -472,6 +472,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1):
         z = gaussian_sample(mean, logs, temperature = temperature)
         list_img = model.flow(z, temperature=temperature, reverse=True)
 
+    n = 0
     for x in list_img :
         model.zero_grad()
         _, nll, _ = model(x.unsqueeze(0))
@@ -485,19 +486,19 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1):
         if torch.isinf(current_grad).any() :
             T-=1
             continue
+        n+=1
         if total_grad is None :
             total_grad = copy.deepcopy(current_grad)
         else :
-            total_grad += current_grad
-    
+            total_grad = (1/n+1) * (n * current_grad + total_grad)
+    # ** .75 : power to fischer matrix, 
+    return 1./(total_grad+1e-8)
 
-    return float(T)/(total_grad+1e-8)
-
-def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_matrix, image_shape, num_classes, dataloader = False):
+def calculate_score_statistic_from_model(data, pathmodel, pathweights, inv_fischer_matrix, image_shape, num_classes, dataloader = False):
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
-    for key in fischer_matrix.keys():
+    for key in inv_fischer_matrix.keys():
         score[key]= []
 
     if not dataloader :
@@ -516,12 +517,12 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, fischer_m
                 if param_copy.grad is not None :
                     grads.append(-param_copy.grad.view(-1))
             grads = torch.cat(grads)
-            for key in fischer_matrix.keys():
-                score_aux = torch.mean(grads**2 * fischer_matrix[key])
+            for key in inv_fischer_matrix.keys():
+                score_aux = torch.mean(grads**2 * inv_fischer_matrix[key])
                 if not torch.isinf(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
 
-    for key in fischer_matrix.keys():
+    for key in inv_fischer_matrix.keys():
         score[key] = np.array(score[key])
 
     return score
@@ -537,14 +538,11 @@ def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_na
         print(f"{dataset2_name} {prefix}",np.mean(-input2[key]))
         print(f"{dataset1_name} {prefix}",np.mean(-input1[key]))
 
-        
-
-
         plt.figure(figsize=(20,10))
         plt.title(f"Histogram Glow - trained on {dataset1_name}")
         plt.xlabel(f"{prefix}")
-        plt.hist(input2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
         plt.hist(input1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
+        plt.hist(input2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
         plt.legend()
         plt.savefig(os.path.join(output_path,f"{prefix}_Step{key}"))
         plt.close()
