@@ -299,7 +299,7 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                 assert(name_copy == name)
                 if param_copy.grad is not None :
-                    aux_diff_param = param_copy.data - param.data
+                    aux_diff_param = param_copy.data.detach() - param.data.detach()
                     diff_param.append(aux_diff_param.view(-1))
             grads = torch.flatten(torch.cat(grads))
             diff_param = torch.flatten(torch.cat(diff_param))
