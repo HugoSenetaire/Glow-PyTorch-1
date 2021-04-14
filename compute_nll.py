@@ -463,6 +463,7 @@ def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_nam
 
         save_figures(output_path_global, fischer_score_1, fischer_score_2, "Score Stats", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
         compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "FischerScoreStats")
+    os.remove(pathweights)
 
 
 def fischer_approximation_from_model(model, T = 1000, temperature = 1):

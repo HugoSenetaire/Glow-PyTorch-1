@@ -314,7 +314,11 @@ def load_model_from_param(path_param, path_weight, num_classes, image_shape):
              hparams['learn_top'], hparams['y_condition'])
 
 
-    model.load_state_dict(torch.load(path_weight))
+    dic = torch.load(path_weight)
+    if 'model' in dic.keys():
+        model.load_state_dict(dic["model"])
+    else :
+        model.load_state_dict(dic)
     model.set_actnorm_init()
 
     return model
