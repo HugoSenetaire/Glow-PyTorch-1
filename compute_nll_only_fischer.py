@@ -370,14 +370,18 @@ def global_fischer_stats(path, epoch, data1, data2, model, dataset1_name, datase
 
 
 
-def fischer_approximation(model, T = 1000, temperature = 1):
+def fischer_approximation(model, T = 1000, temperature = 1, generated = True, dataset = False):
     print("Fischer Approximation")
     total_grad = None
-    with torch.no_grad():
-        mean, logs = model.prior(None,batch_size = T)
-        z = gaussian_sample(mean, logs, temperature = temperature)
-        list_img = model.flow(z, temperature=temperature, reverse=True)
-
+    if generated :
+        with torch.no_grad():
+            mean, logs = model.prior(None,batch_size = T)
+            z = gaussian_sample(mean, logs, temperature = temperature)
+            list_img = model.flow(z, temperature=temperature, reverse=True)
+    else :
+        list_img = []
+        for k in range(T):
+            list_img.append(dataset[k][0])
     for x in tqdm.tqdm(list_img) :
         model_copy = copy.deepcopy(model)
         model_copy.zero_grad()
@@ -439,7 +443,7 @@ def calculate_score_statistic(data, model, fischer_matrix, dataloader = False):
 
 #### Another STATS from model :
 
-def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, pathmodel, image_shape, num_classes, T_list = [1000], every_epoch = 10, dataloader = False):
+def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, pathmodel, image_shape, num_classes, T_list = [1000], every_epoch = 10, dataloader = False, generated = True, sampling_dataset = None):
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -450,7 +454,7 @@ def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_nam
     if epoch % every_epoch == 0 :
         fischer_approximation_matrix = {}
         for T in T_list :
-            fischer_approximation_matrix[T] = fischer_approximation_from_model(model, T=T)
+            fischer_approximation_matrix[T] = fischer_approximation_from_model(model, T=T, generated=generated, sampling_dataset=sampling_dataset)
         fischer_score_1 = calculate_score_statistic_from_model(data1, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes, dataloader = dataloader)
         fischer_score_2 = calculate_score_statistic_from_model(data2, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes, dataloader = dataloader) 
 
@@ -466,12 +470,17 @@ def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_nam
     os.remove(pathweights)
 
 
-def fischer_approximation_from_model(model, T = 1000, temperature = 1):
+def fischer_approximation_from_model(model, T = 1000, temperature = 1, generated = True, sampling_dataset = None):
     total_grad = None
-    with torch.no_grad():
-        mean, logs = model.prior(None,batch_size = T)
-        z = gaussian_sample(mean, logs, temperature = temperature)
-        list_img = model.flow(z, temperature=temperature, reverse=True)
+    if generated :
+        with torch.no_grad():
+            mean, logs = model.prior(None,batch_size = T)
+            z = gaussian_sample(mean, logs, temperature = temperature)
+            list_img = model.flow(z, temperature=temperature, reverse=True)
+    else :
+        list_img = []
+        for k in range(T):
+            list_img.append(sampling_dataset[k][0])
 
     n = 0
     for x in list_img :
@@ -707,7 +716,6 @@ if __name__ == "__main__":
     path3 = os.path.join(path, "fischer_score_deepcopy")
     path4 = os.path.join(path, "fischer_score_loader")
     # global_nlls(path1, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
-    global_nlls_from_model(path2, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
     # global_fischer_stats(path3, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list = T_list, every_epoch = 1, dataloader = dataloader)
-    if T_list[0] != 0 :
-        global_fisher_stat_from_model(path4, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader)
+    global_fisher_stat_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader, generated = True)
+    global_fisher_stat_from_model(path4+"_dataset", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader, generated = False, sampling_dataset = test_dataset)
