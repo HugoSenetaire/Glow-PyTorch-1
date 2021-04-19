@@ -472,18 +472,30 @@ def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_nam
 
 def fischer_approximation_from_model(model, T = 1000, temperature = 1, generated = True, sampling_dataset = None):
     total_grad = None
-    if generated :
-        with torch.no_grad():
-            mean, logs = model.prior(None,batch_size = T)
-            z = gaussian_sample(mean, logs, temperature = temperature)
-            list_img = model.flow(z, temperature=temperature, reverse=True)
-    else :
-        list_img = []
-        for k in range(T):
-            list_img.append(sampling_dataset[k][0].cuda())
+    # if generated :
+    #     with torch.no_grad():
+    #         mean, logs = model.prior(None,batch_size = 64)
+    #         z = gaussian_sample(mean, logs, temperature = temperature)
+    #         list_img = model.flow(z, temperature=temperature, reverse=True)
+    # else :
+    #     list_img = []
+    #     for k in range(T):
+    #         list_img.append(sampling_dataset[k][0].cuda())
 
     n = 0
-    for x in list_img :
+    index = 0
+    while n<T :
+        if generated :
+            with torch.no_grad():
+                mean, logs = model.prior(None,batch_size = 1)
+                z = gaussian_sample(mean, logs, temperature = temperature)
+                x = model.flow(z, temperature=temperature, reverse=True)[0]
+        else :
+            x = sampling_dataset[index][0].cuda()
+            index+=1
+
+
+
         model.zero_grad()
         _, nll, _ = model(x.unsqueeze(0))
         nll.backward()
@@ -494,7 +506,6 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, generated
 
         current_grad = torch.cat(current_grad)**2
         if torch.isinf(current_grad).any() :
-            T-=1
             continue
         n+=1
         if total_grad is None :
