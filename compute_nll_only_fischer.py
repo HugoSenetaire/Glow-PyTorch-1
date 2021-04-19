@@ -480,7 +480,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, generated
     else :
         list_img = []
         for k in range(T):
-            list_img.append(sampling_dataset[k][0])
+            list_img.append(sampling_dataset[k][0].cuda())
 
     n = 0
     for x in list_img :
