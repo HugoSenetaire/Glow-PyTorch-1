@@ -363,7 +363,6 @@ class InvertibleConv1x1(nn.Module):
                 u_inv = torch.inverse(u)
                 l_inv = torch.inverse(lower)
                 p_inv = torch.inverse(self.p)
-
                 weight = torch.matmul(u_inv, torch.matmul(l_inv, p_inv))
             else:
                 weight = torch.matmul(self.p, torch.matmul(lower, u))

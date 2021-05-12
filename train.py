@@ -126,7 +126,7 @@ def main(
     data1 = []
     data2 = []
     for k in range(nlls_batch_size):
-        dataaux, targetaux= test_dataset[k]
+        dataaux, targetaux = test_dataset[k]
         data1.append(dataaux)
         dataaux, targetaux = test_dataset_2[k]
         data2.append(dataaux)
@@ -324,7 +324,7 @@ def main(
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def eval_likelihood(engine):
-        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = nb_step, every_epoch = every_epoch, lr=lr_test)
+        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = nb_step, every_epoch = every_epoch, optim_default = partial(optim.SGD, lr=1e-5, momentum = 0.))
 
 
     trainer.run(train_loader, epochs)

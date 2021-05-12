@@ -30,6 +30,29 @@ import tqdm
 import numpy as np
 import copy
 import os
+def check_manual_seed(seed):
+    seed = seed or random.randint(1, 10000)
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    print("Using seed: {seed}".format(seed=seed))
+
+
+def check_dataset(dataset, dataroot, augment, download):
+    if dataset == "cifar10":
+        cifar10 = get_CIFAR10(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = cifar10
+    if dataset == "svhn":
+        svhn = get_SVHN(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = svhn
+    if dataset == "mnist":
+        mnist = get_MNIST(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = mnist
+    if dataset == "fashionmnist":
+        fashionmnist = get_FashionMNIST(augment, dataroot, download)
+        input_size, num_classes, train_dataset, test_dataset = fashionmnist
+
+    return input_size, num_classes, train_dataset, test_dataset
 
 
 
@@ -41,6 +64,14 @@ else :
     else :
         device_test = "cuda:0"
 
+def sample(model):
+    with torch.no_grad():
+
+        y = None
+
+        images = postprocess(model(y_onehot=y, temperature=1, reverse=True))
+
+    return images.cpu()
 
 
 
@@ -48,21 +79,10 @@ else :
 
 
 
-
-### Model with loading weights :
-
-
-def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, pathmodel, image_shape, num_classes, nb_step = 1, every_epoch = 10, optim_default = partial(optim.SGD, lr=1e-5, momentum = 0.), dataloader = False):
-
-    if not os.path.exists(path):
-        os.makedirs(path)
-    torch.save(model.state_dict(), os.path.join(path,"current_tested_model.pth"))
-    pathweights = os.path.join(path,"current_tested_model.pth")
-
-    
+def global_nlls(path, epoch, data1, data2, model, dataset1_name, dataset2_name, nb_step = 1, every_epoch = 10,optim_default = partial(optim.SGD, lr=1e-5, momentum = 0.), dataloader = False):
     if epoch % every_epoch == 0 :
-        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll_from_model(data1, pathmodel, pathweights, image_shape, num_classes, nb_step = nb_step, optim_default = optim_default, dataloader=dataloader)
-        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll_from_model(data2, pathmodel, pathweights, image_shape, num_classes, nb_step = nb_step, optim_default = optim_default, dataloader=dataloader)
+        lls1, grads1, statgrads1, likelihood_ratio_statistic_1 = compute_nll(data1, model, nb_step = nb_step, optim_default = optim_default, dataloader = dataloader)
+        lls2, grads2, statgrads2, likelihood_ratio_statistic_2 = compute_nll(data2, model, nb_step = nb_step, optim_default = optim_default, dataloader = dataloader)
 
 
         output_path_global = os.path.join(path,"graphs")
@@ -89,45 +109,37 @@ def global_nlls_from_model(path, epoch, data1, data2, model, dataset1_name, data
         compute_roc_auc_scores(output_path_global, grads1, grads2, "GRADs")
         compute_roc_auc_scores(output_path_global, statgrads1, statgrads2, "statgrads")
         compute_roc_auc_scores(output_path_global, likelihood_ratio_statistic_1, likelihood_ratio_statistic_2, "LikelihoodRatio")
-        
-    os.remove(pathweights)
 
 
 
 
-def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classes, nb_step = 5, optim_default = partial(optim.SGD, lr=5e-5, momentum=0.), dataloader = False):
-    
-    
-    print("Compute NLL from Model")
+
+
+def compute_nll(data, model, nb_step = 1, optim_default = partial(optim.SGD, lr=1e-5, momentum=0.), dataloader = False):
+    print("Compute NLL")
     torch.random.manual_seed(0)
     np.random.seed(0)
     
-    
+
     lls = {}
     grad_total = {}
     grad_stat_total = {}
     likelihood_ratio_statistic = {}
 
-
-    grad_total[0] = []
     for k in range(nb_step+1):
       lls[k] = []
-    #   grad_total[k] = []
+      grad_total[k] = []
       grad_stat_total[k] = []
       likelihood_ratio_statistic[k] = []
 
-    model = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
-
-    #Treating data or the whole dataloader :
     if not dataloader :
         dataloader_aux = [(tqdm.tqdm(data),None)]
     else :
         dataloader_aux = tqdm.tqdm(iter(data))
-
     for data_list,_ in dataloader_aux :
         for x in data_list :
             # load weights.  print the weights.
-            model_copy = load_model_from_param(pathmodel, pathweights, num_classes, image_shape).cuda()
+            model_copy = copy.deepcopy(model).to(device_test)
             optimizer = optim_default(model_copy.parameters())
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
@@ -152,12 +164,11 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
             for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                 assert(name_copy == name)
                 if param_copy.grad is not None :
-                    aux_diff_param = param_copy.data.detach() - param.data.detach()
+                    aux_diff_param = param_copy.data - param.data
                     diff_param.append(aux_diff_param.view(-1))
             grads = torch.flatten(torch.cat(grads))
             diff_param = torch.flatten(torch.cat(diff_param))
-            if not torch.isinf(torch.abs(torch.dot(grads, diff_param))).any(): 
-                grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
+            grad_stat_total[0].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
 
 
 
@@ -166,35 +177,28 @@ def compute_nll_from_model(data, pathmodel, pathweights, image_shape, num_classe
                 diff_param = []
                 _, nll, _ = model_copy(x, y_onehot=None)
                 nll.backward()
-
-                if not torch.isinf(-nll).any():
-                    lls[k].append(-nll.detach().cpu().item())
-                else :
-                    print("INF NLL")
-                    lls[k].append(torch.sign(nll).detach().cpu().item() * 1e8)
-  
+                lls[k].append(-nll.detach().cpu().item())
                 optimizer.step()
                 for (name_copy, param_copy), (name, param) in zip(model_copy.named_parameters(), model.named_parameters()):
                     assert(name_copy == name)
                     if param_copy.grad is not None :
-                        aux_diff_param = param_copy.data.detach() - param.data.detach()
+                        aux_diff_param = param_copy.data - param.data
                         diff_param.append(aux_diff_param.view(-1))
-                diff_param = torch.flatten(torch.cat(diff_param))
 
-                if not torch.isinf(torch.abs(torch.dot(grads, diff_param))).any(): 
-                    grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
-                else :
-                    print("Inf grad stat")
+                grad_total[k].append(torch.sum((grads **2)*lr).detach().cpu().item())
+                diff_param = torch.flatten(torch.cat(diff_param))
+                grad_stat_total[k].append(torch.abs(torch.dot(grads, diff_param)).detach().cpu().item())
            
-    grad_total[0] = np.array(grad_total[0])
-    for key in grad_stat_total.keys():
+
+    for key in grad_total.keys():
+      grad_total[key] = np.array(grad_total[key])
       lls[key] = np.array(lls[key])
       likelihood_ratio_statistic[key] = lls[key] - lls[0]
-      likelihood_ratio_statistic[key] = likelihood_ratio_statistic[key][np.where(np.abs(likelihood_ratio_statistic[key])<1e7)]
       grad_stat_total[key] = np.array(grad_stat_total[key])
 
         
     return lls, grad_total, grad_stat_total, likelihood_ratio_statistic
+
 
 
 
@@ -226,21 +230,31 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size", type=int, default=64, help="batch size used during training"
     )
+
     parser.add_argument(
         "--output_dir", type = str
     )
+
     parser.add_argument("--limited_data", type=int, default = None)
     parser.add_argument("--lr_test", type=float, default = 1e-5, help="Learning rate for the evaluation of ood")
+
+
     parser.add_argument("--optim_type", type=str, choices = ["ADAM", "SGD"])
     parser.add_argument("--momentum", type = float, default = 0.)
+
     parser.add_argument("--Nstep", type=int, default = 5)
+    parser.add_argument("--T_list", nargs="+", default = [1000])
 
     
 
     args = parser.parse_args()
     # args = vars(args)
+    
     device = torch.device("cuda")
 
+    T_list = args.T_list
+    for k in range(len(T_list)) :
+        T_list[k] = int(T_list[k])
 
 
     model_path = args.model_path
@@ -308,5 +322,8 @@ if __name__ == "__main__":
     path = args.output_dir
     epoch = 1
 
+    path1 = os.path.join(path, "nlls_with_deepcopy")
     path2 = os.path.join(path, "nlls_with_loader")
-    global_nlls_from_model(path2, epoch, data1, data2, model, pathmodel=params_path, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
+    path3 = os.path.join(path, "fischer_score_deepcopy")
+    path4 = os.path.join(path, "fischer_score_loader")
+    global_nlls(path1, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, nb_step = args.Nstep, every_epoch = 1, optim_default = optim_default, dataloader = dataloader)
