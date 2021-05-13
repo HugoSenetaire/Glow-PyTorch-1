@@ -56,14 +56,14 @@ def global_fisher_mmd_from_model(path, epoch, data1, data2, model, dataset1_name
     assert(len(T_list_fischer) == len(T_list_gradient))
 
     if epoch % every_epoch == 0 :
-        fischer_approximation_matrix = {}
+        inv_sqrt_fischer_approximation_matrix = {}
         gradient_mean = {}
-        for T in T_list_gradient :
-            fischer_approximation_matrix[T] = fischer_approximation_from_model(model, T=T_list_fischer, type_fischer=type_fischer, sampling_dataset=sampling_dataset)
+        for T in T_list_fischer :
+            inv_sqrt_fischer_approximation_matrix[T] = torch.pow(fischer_approximation_from_model(model, T=T, type_fischer=type_fischer, sampling_dataset=sampling_dataset), -0.5)
         for T in T_list_gradient : 
             gradient_mean[T] = gradient_mean_from_model(model, sampling_dataset, T)
-        fischer_score_1 = calculate_fischer_mmd_from_model(data1, model, fischer_approximation_matrix, gradient_mean, dataloader = dataloader)
-        fischer_score_2 = calculate_fischer_mmd_from_model(data2, model, fischer_approximation_matrix, gradient_mean, dataloader = dataloader) 
+        fischer_score_1 = calculate_fischer_mmd_from_model(data1, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader)
+        fischer_score_2 = calculate_fischer_mmd_from_model(data2, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader) 
 
         output_path_global = os.path.join(path,"graphs")
         if not os.path.exists(output_path_global):
@@ -98,13 +98,13 @@ def calculate_fischer_mmd_from_model(data, model, gradient_mean , inv_fischer_ma
             x = x.to(device_test).unsqueeze(0)
             _, nll, _ = model(x, y_onehot=None)
             nll.backward()
-            for _, param_copy in model_copy.named_parameters():
+            for _, param_copy in model.named_parameters():
                 if param_copy.grad is not None :
                     grads.append(-param_copy.grad.view(-1))
             grads = torch.cat(grads)
             for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
-                score_aux = torch.linalg.norm( (grads[key] - gradient_mean[key]) * inv_fischer_matrix_sqrt[key])
-                if not torch.isinf(score_aux).any():
+                score_aux = torch.linalg.norm( (grads - gradient_mean[key[1]]) * inv_fischer_matrix_sqrt[key[0]])
+                if not torch.isinf(score_aux).any() and not torch.isnan(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
 
     for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
@@ -163,9 +163,13 @@ if __name__ == "__main__":
     
     device = torch.device("cuda")
 
-    T_list = args.T_list
-    for k in range(len(T_list)) :
-        T_list[k] = int(T_list[k])
+    T_list_gradient = args.T_list_gradient
+    for k in range(len(T_list_gradient)) :
+        T_list_gradient[k] = int(T_list_gradient[k])
+
+    T_list_fischer = args.T_list_fischer
+    for k in range(len(T_list_fischer)) :
+        T_list_fischer[k] = int(T_list_fischer[k])
 
 
     model_path = args.model_path
@@ -229,6 +233,6 @@ if __name__ == "__main__":
     epoch = 1
 
     path4 = os.path.join(path, "MMD_Fischer")
-    global_fisher_mmd_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = args.T_list_fischer, T_list_gradient = args.T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "generated", sampling_dataset = test_dataset)
-    global_fisher_mmd_from_model(path4+"_dataset", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = args.T_list_fischer, T_list_gradient = args.T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "sampled", sampling_dataset = test_dataset)
-    global_fisher_mmd_from_model(path4+"_identity", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = args.T_list_fischer, T_list_gradient = args.T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "identity", sampling_dataset = test_dataset)
+    global_fisher_mmd_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "generated", sampling_dataset = test_dataset)
+    global_fisher_mmd_from_model(path4+"_dataset", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "sampled", sampling_dataset = test_dataset)
+    global_fisher_mmd_from_model(path4+"_identity", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "identity", sampling_dataset = test_dataset)

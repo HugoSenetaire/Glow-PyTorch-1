@@ -58,7 +58,7 @@ def global_fisher_stat_from_model(path, epoch, data1, data2, model, dataset1_nam
     if epoch % every_epoch == 0 :
         fischer_approximation_matrix = {}
         for T in T_list :
-            fischer_approximation_matrix[T] = fischer_approximation_from_model(model, T=T, type_fischer=type_fischer, sampling_dataset=sampling_dataset)
+            fischer_approximation_matrix[T] = torch.pow(fischer_approximation_from_model(model, T=T, type_fischer=type_fischer, sampling_dataset=sampling_dataset),-1)
         fischer_score_1 = calculate_score_statistic_from_model(data1, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes, dataloader = dataloader)
         fischer_score_2 = calculate_score_statistic_from_model(data2, pathmodel, pathweights, fischer_approximation_matrix, image_shape, num_classes, dataloader = dataloader) 
 
@@ -234,6 +234,6 @@ if __name__ == "__main__":
     epoch = 1
 
     path4 = os.path.join(path, "fischer_score_loader")
-    global_fisher_stat_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader, type_fischer = "generated")
+    global_fisher_stat_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader, type_fischer = "generated", sampling_dataset = test_dataset)
     global_fisher_stat_from_model(path4+"_dataset", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = T_list, every_epoch = 1, dataloader = dataloader, type_fischer = "sampled", sampling_dataset = test_dataset)
     global_fisher_stat_from_model(path4+"_identity", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, pathmodel=params_path, image_shape=image_shape, num_classes=num_classes, T_list = [10], every_epoch = 1, dataloader = dataloader, type_fischer = "Identity", sampling_dataset = test_dataset)

@@ -143,7 +143,7 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", type = float, default = 0.)
 
     parser.add_argument("--Nstep", type=int, default = 5)
-    parser.add_argument("--T_list", nargs="+", default = [1000])
+
 
     
 
@@ -152,9 +152,6 @@ if __name__ == "__main__":
     
     device = torch.device("cuda")
 
-    T_list = args.T_list
-    for k in range(len(T_list)) :
-        T_list[k] = int(T_list[k])
 
 
     model_path = args.model_path

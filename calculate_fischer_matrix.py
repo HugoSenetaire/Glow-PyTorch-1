@@ -75,7 +75,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
             fischer_matrix = copy.deepcopy(current_grad)
         else :
             fischer_matrix = (1/n+1) * (n * current_grad + fischer_matrix)
-    return fischer_matrix
+    return fischer_matrix + 1e-8
 
 
 def gradient_mean_from_model(model, sampling_dataset , T = 1000):
@@ -108,14 +108,14 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
 
 
 def log_p_data_from_model(model, sampling_dataset):
-    log_p = None
+    log_p = 0
     n = 0
     index = 0
     while index< len(sampling_dataset) :
         x = sampling_dataset[index][0].cuda()
         index+=1
         _, nll, _ = model(x.unsqueeze(0))
-        log_p += nll
+        log_p += -nll
     # ** .75 : power to fischer matrix, 
     return log_p/n
 
