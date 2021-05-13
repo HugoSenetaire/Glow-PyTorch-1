@@ -43,6 +43,8 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
     n = 0
     index = 0
     while n<T and index<len(sampling_dataset) :
+        if index%100 == 0 :
+            print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
         if type_fischer == "generated" :
             with torch.no_grad():
                 mean, logs = model.prior(None,batch_size = 1)
@@ -70,11 +72,11 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         current_grad = torch.cat(current_grad)**2
         if torch.isinf(current_grad).any() :
             continue
-        n+=1
         if fischer_matrix is None :
             fischer_matrix = copy.deepcopy(current_grad)
         else :
             fischer_matrix = (1/n+1) * (n * current_grad + fischer_matrix)
+        n+=1
     return fischer_matrix + 1e-8
 
 
@@ -83,6 +85,8 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     n = 0
     index = 0
     while n<T and index< len(sampling_dataset) :
+        if index%100 == 0 :
+            print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
         model.zero_grad()
         x = sampling_dataset[index][0].cuda()
         index+=1
@@ -97,25 +101,27 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         current_grad = torch.cat(current_grad)
         if torch.isinf(current_grad).any() :
             continue
-        n+=1
+
         if total_grad is None :
             total_grad = copy.deepcopy(current_grad)
         else :
             total_grad = (1/n+1) * (n * current_grad + total_grad)
+        n+=1
     # ** .75 : power to fischer matrix, 
     return total_grad
 
 
 
 def log_p_data_from_model(model, sampling_dataset, mean_calculation_limit = 10000):
-    log_p = 0
-    n = 0
-    index = 0
-    while index < mean_calculation_limit and index < len(sampling_dataset) :
-        x = sampling_dataset[index][0].cuda()
-        index+=1
-        _, nll, _ = model(x.unsqueeze(0))
-        log_p += -nll
-    # ** .75 : power to fischer matrix, 
+    with torch.no_grad():
+        log_p = 0
+        n = 0
+        index = 0
+        while index < mean_calculation_limit and index < len(sampling_dataset) :
+            x = sampling_dataset[index][0].cuda()
+            index+=1
+            _, nll, _ = model(x.unsqueeze(0))
+            log_p += -nll
+        # ** .75 : power to fischer matrix, 
     return log_p/index
 
