@@ -42,7 +42,8 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
     fischer_matrix = None
     n = 0
     index = 0
-    indexes = random.shuffle(np.arange(0, len(sampling_dataset)))
+    indexes = np.arange(0, len(sampling_dataset), step=1)
+    random.shuffle(indexes)
     print(f"Fischer with type {type_fischer}")
     while n<T and index<len(sampling_dataset) :
         if index%100 == 0 :
@@ -87,7 +88,8 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     total_grad = None
     n = 0
     index = 0
-    indexes = random.shuffle(np.arange(0, len(sampling_dataset)))
+    indexes = np.arange(0, len(sampling_dataset), step=1)
+    random.shuffle(indexes)
     while n<T and index< len(sampling_dataset) :
         if index%100 == 0 :
             print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
@@ -124,7 +126,9 @@ def log_p_data_from_model(model, sampling_dataset, mean_calculation_limit = 1000
         log_p = 0
         n = 0
         index = 0
-        indexes = random.shuffle(np.arange(0, len(sampling_dataset)))
+        indexes = np.arange(0, len(sampling_dataset), step=1)
+        random.shuffle(indexes)
+
         while index < mean_calculation_limit and index < len(sampling_dataset) :
             x = sampling_dataset[indexes[index]][0].cuda()
             index+=1

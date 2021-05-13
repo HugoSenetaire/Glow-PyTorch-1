@@ -198,12 +198,16 @@ if __name__ == "__main__":
         data1 = []
         data2 = []
 
-        indexes = random.shuffle(np.arange(0, len(test_dataset), step=1))[:args.limited_data]
+        indexes = np.arange(0, len(test_dataset), step=1)
+        random.shuffle(indexes)
+        indexes = indexes[:args.limited_data]
         for k in indexes:
             dataaux, targetaux = test_dataset[k]
             data1.append(dataaux)
 
-        indexes = random.shuffle(np.arange(0, len(test_dataset_2), step=1))[:args.limited_data]
+        indexes = np.arange(0, len(test_dataset_2), step=1)
+        random.shuffle(indexes)
+        indexes = indexes[:args.limited_data]
         for k in indexes:
             dataaux, targetaux = test_dataset_2[k]
             data2.append(dataaux)
@@ -227,6 +231,6 @@ if __name__ == "__main__":
     path = args.output_dir
     epoch = 1
 
-    path4 = os.path.join(path, "TypicalityMMD")
+    path = os.path.join(path, "TypicalityMMD")
 
     global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, sampling_dataset = test_dataset,  every_epoch = 1, dataloader = False, mean_calculation_limit=args.mean_calculation_limit)

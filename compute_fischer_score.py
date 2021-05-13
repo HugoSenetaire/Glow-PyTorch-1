@@ -208,18 +208,21 @@ if __name__ == "__main__":
 
 
 
-
     if args.limited_data is not None :
         dataloader = False
         data1 = []
         data2 = []
 
-        indexes = random.shuffle(np.arange(0, len(test_dataset), step=1))[:args.limited_data]
+        indexes = np.arange(0, len(test_dataset), step=1)
+        random.shuffle(indexes)
+        indexes = indexes[:args.limited_data]
         for k in indexes:
             dataaux, targetaux = test_dataset[k]
             data1.append(dataaux)
 
-        indexes = random.shuffle(np.arange(0, len(test_dataset_2), step=1))[:args.limited_data]
+        indexes = np.arange(0, len(test_dataset_2), step=1)
+        random.shuffle(indexes)
+        indexes = indexes[:args.limited_data]
         for k in indexes:
             dataaux, targetaux = test_dataset_2[k]
             data2.append(dataaux)
