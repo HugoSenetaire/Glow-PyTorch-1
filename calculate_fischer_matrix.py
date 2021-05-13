@@ -42,6 +42,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
     fischer_matrix = None
     n = 0
     index = 0
+    print(f"Fischer with type {type_fischer}")
     while n<T and index<len(sampling_dataset) :
         if index%100 == 0 :
             print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
@@ -52,7 +53,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
                 x = model.flow(z, temperature=temperature, reverse=True)[0]
         elif type_fischer == "sampled" :
             x = sampling_dataset[index][0].cuda()
-            index+=1
+            
         else :
             if n == 0:
                 mean, logs = model.prior(None,batch_size = 1)
@@ -77,6 +78,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         else :
             fischer_matrix = (1/n+1) * (n * current_grad + fischer_matrix)
         n+=1
+        index+=1
     return fischer_matrix + 1e-8
 
 
@@ -106,7 +108,9 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
             total_grad = copy.deepcopy(current_grad)
         else :
             total_grad = (1/n+1) * (n * current_grad + total_grad)
+
         n+=1
+        index+=1
     # ** .75 : power to fischer matrix, 
     return total_grad
 
