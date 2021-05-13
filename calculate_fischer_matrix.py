@@ -123,7 +123,7 @@ def log_p_data_from_model(model, sampling_dataset, mean_calculation_limit = 1000
         index = 0
         to_iterate = iter(sampling_dataset)
         while index < mean_calculation_limit and index < len(sampling_dataset.dataset) :
-            x = next(to_iterate).cuda()
+            x, _ = next(to_iterate).cuda()
             index+=1
             _, nll, _ = model(x.unsqueeze(0))
             log_p += -nll
