@@ -203,28 +203,46 @@ if __name__ == "__main__":
     model = model.to(device)
     model = model.eval()
 
+
+    dataloader1 = data.DataLoader(
+            test_dataset,
+            batch_size=1,
+            shuffle=True,
+            num_workers=6,
+            drop_last=False,
+        )
+    dataloader2 = data.DataLoader(
+            test_dataset_2,
+            batch_size=1,
+            shuffle=True,
+            num_workers=6,
+            drop_last=False,
+        )
     if args.limited_data is not None :
         dataloader = False
+        
         data1 = []
         data2 = []
+        iter1 = iter(dataloader1)
+        iter2 = iter(dataloader2)
         for k in range(args.limited_data):
-            dataaux, targetaux = test_dataset[k]
+            dataaux, targetaux = next(iter1)
             data1.append(dataaux)
-            dataaux, targetaux = test_dataset_2[k]
+            dataaux, targetaux = next(iter2)
             data2.append(dataaux)
     elif args.limited_data is None :
         dataloader = True
         data1 = data.DataLoader(
             test_dataset,
             batch_size=args.batch_size,
-            shuffle=False,
+            shuffle=True,
             num_workers=6,
             drop_last=False,
         )
         data2 = data.DataLoader(
             test_dataset_2,
             batch_size=args.batch_size,
-            shuffle=False,
+            shuffle=True,
             num_workers=6,
             drop_last=False,
         )
@@ -233,6 +251,6 @@ if __name__ == "__main__":
     epoch = 1
 
     path4 = os.path.join(path, "MMD_Fischer")
-    global_fisher_mmd_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "generated", sampling_dataset = test_dataset)
-    global_fisher_mmd_from_model(path4+"_dataset", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "sampled", sampling_dataset = test_dataset)
-    global_fisher_mmd_from_model(path4+"_identity", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "identity", sampling_dataset = test_dataset)
+    global_fisher_mmd_from_model(path4+"_generated", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "generated", sampling_dataset = dataloader1)
+    global_fisher_mmd_from_model(path4+"_dataset", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "sampled", sampling_dataset = dataloader1)
+    global_fisher_mmd_from_model(path4+"_identity", epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, T_list_fischer = T_list_fischer, T_list_gradient = T_list_gradient, every_epoch = 1, dataloader = dataloader, type_fischer = "identity", sampling_dataset = dataloader1)
