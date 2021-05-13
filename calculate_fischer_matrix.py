@@ -95,13 +95,13 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
             print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
         model.zero_grad()
         x = sampling_dataset[indexes[index]][0].cuda()
-        index+=1
 
         _, nll, _ = model(x.unsqueeze(0))
         nll.backward()
         current_grad = []
         for _, param in model.named_parameters():
             if param.grad is not None :
+                # if torch.isinf(param.grad).any():
                 current_grad.append(-param.grad.view(-1))
 
         current_grad = torch.cat(current_grad)
@@ -117,6 +117,8 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         n+=1
         index+=1
     # ** .75 : power to fischer matrix, 
+    # print(total_grad.max())
+    # print(total_grad.min())
     return total_grad
 
 
