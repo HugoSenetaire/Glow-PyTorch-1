@@ -67,7 +67,8 @@ def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_na
         plt.close()
 
         plt.figure(figsize = (20,10))
-        plt.boxplot([input2[key], input1[key]], labels = [dataset2_name, f"{dataset1_name}"])
+        print(input1[key])
+        plt.boxplot([input1[key], input2[key]], labels = [dataset1_name, f"{dataset2_name}"])
         plt.savefig(os.path.join(output_path,f"{prefix}_BOXPLOT_Step{key}"))
         plt.close()
 

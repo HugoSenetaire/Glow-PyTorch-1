@@ -57,7 +57,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
                 z = gaussian_sample(mean, logs, temperature = temperature)
                 x = model.flow(z, temperature=temperature, reverse=True)[0]
             else :
-                return torch.eye(fischer_matrix.flatten().shape[0])
+                return torch.ones(fischer_matrix.flatten().shape[0]).cuda()
 
         model.zero_grad()
         _, nll, _ = model(x.unsqueeze(0))
@@ -107,15 +107,15 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
 
 
 
-def log_p_data_from_model(model, sampling_dataset):
+def log_p_data_from_model(model, sampling_dataset, mean_calculation_limit = 10000):
     log_p = 0
     n = 0
     index = 0
-    while index< len(sampling_dataset) :
+    while index < mean_calculation_limit and index < len(sampling_dataset) :
         x = sampling_dataset[index][0].cuda()
         index+=1
         _, nll, _ = model(x.unsqueeze(0))
         log_p += -nll
     # ** .75 : power to fischer matrix, 
-    return log_p/n
+    return log_p/index
 

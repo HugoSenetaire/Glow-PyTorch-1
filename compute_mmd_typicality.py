@@ -48,14 +48,14 @@ else :
 
 #### Another STATS from model :
 
-def global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, sampling_dataset,  every_epoch = 10, dataloader = False):
+def global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name, dataset2_name, sampling_dataset,  every_epoch = 10, dataloader = False, mean_calculation_limit = 1000000):
 
     if not os.path.exists(path):
         os.makedirs(path)
 
     
     if epoch % every_epoch == 0 :
-        log_p_mean = log_p_data_from_model(model, sampling_dataset)
+        log_p_mean = log_p_data_from_model(model, sampling_dataset, mean_calculation_limit)
         fischer_score_1 = calculate_typicality_mmd_from_model(data1, model, log_p_mean, dataloader = dataloader)
         fischer_score_2 = calculate_typicality_mmd_from_model(data2, model, log_p_mean, dataloader = dataloader) 
 
@@ -66,8 +66,8 @@ def global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_
         if not os.path.exists(output_path_global):
             os.makedirs(output_path_global)
 
-        save_figures(output_path_global, fischer_score_1, fischer_score_2, "Score Stats", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
-        compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "FischerScoreStats")
+        save_figures(output_path_global, fischer_score_1, fischer_score_2, "Typicality_mmd", dataset1_name = dataset1_name, dataset2_name = dataset2_name)
+        compute_roc_auc_scores(output_path_global, fischer_score_1, fischer_score_2, "Typicality_mmd")
 
 
 
@@ -92,10 +92,10 @@ def calculate_typicality_mmd_from_model(data, model, log_p_mean, dataloader = Fa
             _, nll, _ = model(x, y_onehot=None)
 
             for key in score.keys():
-                score[key].append(log_p_mean * nll)
+                score[key].append((log_p_mean * nll).cpu().detach().numpy())
                       
     for key in score.keys():
-        score[key] = np.array(score[key])
+        score[key] = np.array(score[key]).reshape(-1)
 
     return score
 
@@ -144,6 +144,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--Nstep", type=int, default = 5)
 
+    parser.add_argument("--mean_calculation_limit", type=int, default = 10000)
 
     
 
@@ -162,7 +163,6 @@ if __name__ == "__main__":
     with open(os.path.join(model_path, 'hparams.json')) as json_file:  
         hparams = json.load(json_file)
 
-    
         
 
     ds = check_dataset(args.dataset, args.dataroot, True, args.download)
@@ -221,4 +221,4 @@ if __name__ == "__main__":
 
     path4 = os.path.join(path, "TypicalityMMD")
 
-    global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, sampling_dataset = test_dataset,  every_epoch = 1, dataloader = False)
+    global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, sampling_dataset = test_dataset,  every_epoch = 1, dataloader = False, mean_calculation_limit=args.mean_calculation_limit)

@@ -38,21 +38,6 @@ def check_manual_seed(seed):
     print("Using seed: {seed}".format(seed=seed))
 
 
-def check_dataset(dataset, dataroot, augment, download):
-    if dataset == "cifar10":
-        cifar10 = get_CIFAR10(augment, dataroot, download)
-        input_size, num_classes, train_dataset, test_dataset = cifar10
-    if dataset == "svhn":
-        svhn = get_SVHN(augment, dataroot, download)
-        input_size, num_classes, train_dataset, test_dataset = svhn
-    if dataset == "mnist":
-        mnist = get_MNIST(augment, dataroot, download)
-        input_size, num_classes, train_dataset, test_dataset = mnist
-    if dataset == "fashionmnist":
-        fashionmnist = get_FashionMNIST(augment, dataroot, download)
-        input_size, num_classes, train_dataset, test_dataset = fashionmnist
-
-    return input_size, num_classes, train_dataset, test_dataset
 
 
 
@@ -64,14 +49,7 @@ else :
     else :
         device_test = "cuda:0"
 
-def sample(model):
-    with torch.no_grad():
 
-        y = None
-
-        images = postprocess(model(y_onehot=y, temperature=1, reverse=True))
-
-    return images.cpu()
 
 
 
