@@ -43,17 +43,17 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
     n = 0
     index = 0
     print(f"Fischer with type {type_fischer}")
-    to_iterate = iter(sampling_dataset)
-    while n<T and index<len(sampling_dataset.dataset) :
+    while n<T and index<len(sampling_dataset) :
         if index%100 == 0 :
-            print(f"Index {index} on {len(sampling_dataset.dataset)}, n {n} on {T}")
+            print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
         if type_fischer == "generated" :
             with torch.no_grad():
                 mean, logs = model.prior(None,batch_size = 1)
                 z = gaussian_sample(mean, logs, temperature = temperature)
                 x = model.flow(z, temperature=temperature, reverse=True)[0]
         elif type_fischer == "sampled" :
-            x = next(to_iterate).cuda()
+            x = sampling_dataset[index][0].cuda()
+            
         else :
             if n == 0:
                 mean, logs = model.prior(None,batch_size = 1)
@@ -86,13 +86,13 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     total_grad = None
     n = 0
     index = 0
-    to_iterate = iter(sampling_dataset)
-    while n<T and index< len(sampling_dataset.dataset) :
+    while n<T and index< len(sampling_dataset) :
         if index%100 == 0 :
-            print(f"Index {index} on {len(sampling_dataset.dataset)}, n {n} on {T}")
+            print(f"Index {index} on {len(sampling_dataset)}, n {n} on {T}")
         model.zero_grad()
-        x = next(to_iterate).cuda()
+        x = sampling_dataset[index][0].cuda()
         index+=1
+
         _, nll, _ = model(x.unsqueeze(0))
         nll.backward()
         current_grad = []
@@ -109,6 +109,7 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         else :
             total_grad = (1/n+1) * (n * current_grad + total_grad)
 
+
         n+=1
         index+=1
     # ** .75 : power to fischer matrix, 
@@ -121,9 +122,8 @@ def log_p_data_from_model(model, sampling_dataset, mean_calculation_limit = 1000
         log_p = 0
         n = 0
         index = 0
-        to_iterate = iter(sampling_dataset)
-        while index < mean_calculation_limit and index < len(sampling_dataset.dataset) :
-            x, _ = next(to_iterate).cuda()
+        while index < mean_calculation_limit and index < len(sampling_dataset) :
+            x = sampling_dataset[index][0].cuda()
             index+=1
             _, nll, _ = model(x.unsqueeze(0))
             log_p += -nll

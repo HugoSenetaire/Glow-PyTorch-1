@@ -170,6 +170,9 @@ if __name__ == "__main__":
     image_shape, num_classes, train_dataset, test_dataset = ds
     image_shape2, num_classes2, train_dataset_2, test_dataset_2 = ds2
 
+    test_dataset = random.shuffle(test_dataset)
+    test_dataset_2 = random.shuffle(test_dataset_2)
+
     
     model = Glow(image_shape, hparams['hidden_channels'], hparams['K'], hparams['L'], hparams['actnorm_scale'],
                 hparams['flow_permutation'], hparams['flow_coupling'], hparams['LU_decomposed'], num_classes,
@@ -190,33 +193,14 @@ if __name__ == "__main__":
     elif args.optim_type == "SGD":
         optim_default = partial(optim.SGD, lr = args.lr_test, momentum = args.momentum)
 
-
-    dataloader1 = data.DataLoader(
-            test_dataset,
-            batch_size=1,
-            shuffle=True,
-            num_workers=6,
-            drop_last=False,
-        )
-    dataloader2 = data.DataLoader(
-            test_dataset_2,
-            batch_size=1,
-            shuffle=True,
-            num_workers=6,
-            drop_last=False,
-        )
-
     if args.limited_data is not None :
         dataloader = False
-
         data1 = []
         data2 = []
-        iter1 = iter(dataloader1)
-        iter2 = iter(dataloader2)
         for k in range(args.limited_data):
-            dataaux, targetaux = next(iter1)
+            dataaux, targetaux = test_dataset[k]
             data1.append(dataaux)
-            dataaux, targetaux = next(iter2)
+            dataaux, targetaux = test_dataset_2[k]
             data2.append(dataaux)
     elif args.limited_data is None :
         dataloader = True
@@ -240,4 +224,4 @@ if __name__ == "__main__":
 
     path4 = os.path.join(path, "TypicalityMMD")
 
-    global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, sampling_dataset = dataloader1,  every_epoch = 1, dataloader = False, mean_calculation_limit=args.mean_calculation_limit)
+    global_typicality_mmd_from_model(path, epoch, data1, data2, model, dataset1_name= args.dataset, dataset2_name=args.dataset2, sampling_dataset = test_dataset,  every_epoch = 1, dataloader = False, mean_calculation_limit=args.mean_calculation_limit)
