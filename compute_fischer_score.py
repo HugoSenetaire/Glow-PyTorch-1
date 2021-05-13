@@ -185,8 +185,6 @@ if __name__ == "__main__":
     image_shape2, num_classes2, train_dataset_2, test_dataset_2 = ds2
 
     
-    test_dataset = random.shuffle(test_dataset)
-    test_dataset_2 = random.shuffle(test_dataset_2)
 
     
     model = Glow(image_shape, hparams['hidden_channels'], hparams['K'], hparams['L'], hparams['actnorm_scale'],
@@ -208,15 +206,24 @@ if __name__ == "__main__":
     elif args.optim_type == "SGD":
         optim_default = partial(optim.SGD, lr = args.lr_test, momentum = args.momentum)
 
+
+
+
     if args.limited_data is not None :
         dataloader = False
         data1 = []
         data2 = []
-        for k in range(args.limited_data):
+
+        indexes = random.shuffle(np.arange(0, len(test_dataset), step=1))[:args.limited_data]
+        for k in indexes:
             dataaux, targetaux = test_dataset[k]
             data1.append(dataaux)
+
+        indexes = random.shuffle(np.arange(0, len(test_dataset_2), step=1))[:args.limited_data]
+        for k in indexes:
             dataaux, targetaux = test_dataset_2[k]
             data2.append(dataaux)
+    
     elif args.limited_data is None :
         dataloader = True
         data1 = data.DataLoader(
@@ -233,7 +240,6 @@ if __name__ == "__main__":
             num_workers=6,
             drop_last=False,
         )
-
     path = args.output_dir
     epoch = 1
 
