@@ -116,7 +116,7 @@ def calculate_fischer_mmd_from_model(data, model, gradient_mean , inv_fischer_ma
     for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
         score[key] = np.array(score[key])
     
-    print(f"Count of errors : {compteur}")")
+    print(f"Count of errors : {compteur}")
 
     return score
 
