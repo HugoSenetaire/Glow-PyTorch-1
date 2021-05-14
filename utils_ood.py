@@ -60,8 +60,8 @@ def save_figures(output_path, input1, input2, prefix, dataset1_name, dataset2_na
         plt.figure(figsize=(20,10))
         plt.title(f"Histogram Glow - trained on {dataset1_name}")
         plt.xlabel(f"{prefix}")
-        plt.hist(input1[key], label=f"{dataset1_name}", density=True, bins=50, alpha =0.8)
-        plt.hist(input2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8)
+        plt.hist(input1[key], label=dataset1_name, density=True, bins=50, alpha =0.8, c ='r')
+        plt.hist(input2[key], label=dataset2_name, density=True, bins=30, alpha = 0.8, c = 'b')
         plt.legend()
         plt.savefig(os.path.join(output_path,f"{prefix}_Step{key}"))
         plt.close()
@@ -84,17 +84,17 @@ def compute_roc_auc_scores(output_path, list_1, list_2, prefix):
             continue
        
 
-        label_1 = np.ones(np.shape(result_1))
+        label_1 = np.zeros(np.shape(result_1))
         result_2 = list_2[key]
         if np.isinf(result_2).any() or np.isnan(result_2).any():
             print(f"Inf in the result for {prefix} step {key}")
             test+= f"Inf in the result \n"
             continue
-        label_2 = np.zeros(np.shape(result_2))
+        label_2 = np.ones(np.shape(result_2))
         label_total = np.concatenate((label_1, label_2))
         result_total = np.concatenate((result_1, result_2))
         rocauc_score = roc_auc_score(label_total, result_total)
-        test+= f"Result : {rocauc_score}, Result Reverse {1-rocauc_score} \n"
+        test+= f"Result : {rocauc_score}"
 
     with open(os.path.join(output_path, f"{prefix}_auroc.txt"), "a") as f :
         f.writelines(test)
