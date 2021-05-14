@@ -80,6 +80,7 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, inv_fisch
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
+    compteur = 0
     for key in inv_fischer_matrix.keys():
         score[key]= []
 
@@ -97,18 +98,24 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, inv_fisch
             _, nll, _ = model_copy(x, y_onehot=None)
             nll.backward()
             for name_copy, param_copy in model_copy.named_parameters():
-                if param_copy.grad is not None and not torch.isinf(param_copy.grad).any() and not torch.isnan(param_copy.grad).any() :
-                    grads.append(-param_copy.grad.view(-1))
-                else : 
-                    print(name_copy)
+                # if param_copy.grad is not None and not torch.isinf(param_copy.grad).any() and not torch.isnan(param_copy.grad).any() :
+                grads.append(-param_copy.grad.view(-1))
+                # else : 
+                    # print(name_copy)
+
             grads = torch.cat(grads)
             for key in inv_fischer_matrix.keys():
                 score_aux = torch.mean(grads**2 * inv_fischer_matrix[key])
                 if not torch.isinf(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
+                else :
+                    compteur +=1
 
     for key in inv_fischer_matrix.keys():
         score[key] = np.array(score[key])
+
+
+    print(f"Count of errors : {compteur}")
 
     return score
 

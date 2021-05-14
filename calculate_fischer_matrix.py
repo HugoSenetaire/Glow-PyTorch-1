@@ -41,6 +41,10 @@ import os
 def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fischer = "generated", sampling_dataset = None):
     fischer_matrix = None
     n = 0
+
+    compteur_empty = 0
+    compteur_inf = 0
+
     index = 0
     indexes = np.arange(0, len(sampling_dataset), step=1)
     random.shuffle(indexes)
@@ -69,12 +73,16 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         nll.backward()
         current_grad = []
         for _, param in model.named_parameters():
-            if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any():
-                current_grad.append(-param.grad.view(-1))
+            # if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any():
+            current_grad.append(-param.grad.view(-1))
         if len(current_grad) == 0 :
+            print("No grad calculation available")
+            compteur_empty +=1
             continue  
         current_grad = torch.cat(current_grad)**2
         if torch.isinf(current_grad).any() :
+            print("Found inf here in current grad")
+            compteur_inf +=1
             continue
         if fischer_matrix is None :
             fischer_matrix = copy.deepcopy(current_grad)
@@ -82,6 +90,10 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
             fischer_matrix = (1/n+1) * (n * current_grad + fischer_matrix)
         n+=1
         index+=1
+
+    print(f"Number of empty is {compteur_empty}")
+    print(f"Number of inf is {compteur_inf}")
+
     return fischer_matrix + 1e-8
 
 
@@ -89,6 +101,7 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     total_grad = None
     n = 0
     index = 0
+    compteur_inf = 0
     indexes = np.arange(0, len(sampling_dataset), step=1)
     random.shuffle(indexes)
     while n<T and index< len(sampling_dataset) :
@@ -101,12 +114,14 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         nll.backward()
         current_grad = []
         for _, param in model.named_parameters():
-            if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any() :
+            # if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any() :
                 # if torch.isinf(param.grad).any():
-                current_grad.append(-param.grad.view(-1))
+            current_grad.append(-param.grad.view(-1))
 
         current_grad = torch.cat(current_grad)
         if torch.isinf(current_grad).any() :
+            print("Found inf")
+            compteur_inf +=1
             continue
 
         if total_grad is None :
@@ -120,6 +135,8 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     # ** .75 : power to fischer matrix, 
     # print(total_grad.max())
     # print(total_grad.min())
+    print(f"Number of inf is {compteur_inf}")
+
     return total_grad
 
 

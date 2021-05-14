@@ -59,7 +59,7 @@ def global_fisher_mmd_from_model(path, epoch, data1, data2, model, dataset1_name
         inv_sqrt_fischer_approximation_matrix = {}
         gradient_mean = {}
         for T in T_list_fischer :
-            inv_sqrt_fischer_approximation_matrix[T] = torch.pow(fischer_approximation_from_model(model, T=T, type_fischer=type_fischer, sampling_dataset=sampling_dataset), -0.5)
+            inv_sqrt_fischer_approximation_matrix[T] = torch.pow(fischer_approximation_from_model(model, T=T, type_fischer=type_fischer, sampling_dataset=sampling_dataset), -1/2)
         for T in T_list_gradient : 
             gradient_mean[T] = gradient_mean_from_model(model, sampling_dataset, T)
         fischer_score_1 = calculate_fischer_mmd_from_model(data1, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader)
@@ -81,6 +81,7 @@ def calculate_fischer_mmd_from_model(data, model, gradient_mean , inv_fischer_ma
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
+    compteur = 0
     for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
         score[key]= []
 
@@ -99,20 +100,23 @@ def calculate_fischer_mmd_from_model(data, model, gradient_mean , inv_fischer_ma
             _, nll, _ = model(x, y_onehot=None)
             nll.backward()
             for _, param_copy in model.named_parameters():
-                if param_copy.grad is not None and not torch.isinf(param_copy.grad).any() and not torch.isnan(param_copy.grad).any() :
-                    grads.append(-param_copy.grad.view(-1))
-                else : 
-                    print(name_copy)
+                # if param_copy.grad is not None and not torch.isinf(param_copy.grad).any() and not torch.isnan(param_copy.grad).any() :
+                grads.append(-param_copy.grad.view(-1))
+                # else : 
+                    # print(name_copy)
             grads = torch.cat(grads)
             for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
                 score_aux = torch.linalg.norm( (grads - gradient_mean[key[1]]) * inv_fischer_matrix_sqrt[key[0]])
                 if not torch.isinf(score_aux).any() and not torch.isnan(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
                 else :
+                    compteur+=1
                     print("Error")
 
     for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
         score[key] = np.array(score[key])
+    
+    print(f"Count of errors : {compteur}")")
 
     return score
 
