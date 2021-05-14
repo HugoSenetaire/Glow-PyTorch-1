@@ -116,10 +116,10 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         for _, param in model.named_parameters():
             # if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any() :
                 # if torch.isinf(param.grad).any():
-            current_grad.append(-param.grad.view(-1))
+            # current_grad.append(-param.grad.view(-1))
 
         current_grad = torch.cat(current_grad)
-        if torch.isinf(current_grad).any() :
+        if torch.isinf(current_grad).any() or torch.isnan(current_grad).any() :
             print("Found inf")
             compteur_inf +=1
             continue
@@ -127,7 +127,7 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         if total_grad is None :
             total_grad = copy.deepcopy(current_grad)
         else :
-            total_grad = (1/n+1) * (n * current_grad + total_grad)
+            total_grad = (1/n+1) * (n * total_grad + current_grad)
 
 
         n+=1
