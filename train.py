@@ -264,8 +264,7 @@ def main(
             optimizer.load_state_dict(torch.load(saved_optimizer)['opt'])
 
         file_name, ext = os.path.splitext(saved_model)
-        resume_epoch = int(file_name.split("_")[-1])
-        print(resume_epoch)
+        resume_epoch = int(file_name.split("_")[-1])/1e3
 
         @trainer.on(Events.STARTED)
         def resume_training(engine):
