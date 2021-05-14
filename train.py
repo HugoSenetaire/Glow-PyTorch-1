@@ -265,6 +265,7 @@ def main(
 
         file_name, ext = os.path.splitext(saved_model)
         resume_epoch = int(file_name.split("_")[-1])
+        print(resume_epoch)
 
         @trainer.on(Events.STARTED)
         def resume_training(engine):
