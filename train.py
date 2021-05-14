@@ -322,9 +322,9 @@ def main(
         )
         timer.reset()
 
-    @trainer.on(Events.EPOCH_COMPLETED)
-    def eval_likelihood(engine):
-        global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = nb_step, every_epoch = every_epoch, optim_default = partial(optim.SGD, lr=1e-5, momentum = 0.))
+    # @trainer.on(Events.EPOCH_COMPLETED)
+    # def eval_likelihood(engine):
+    #     global_nlls(output_dir, engine.state.epoch, data1, data2, model, dataset1_name = dataset, dataset2_name = dataset2, nb_step = nb_step, every_epoch = every_epoch, optim_default = partial(optim.SGD, lr=1e-5, momentum = 0.))
 
 
     trainer.run(train_loader, epochs)
