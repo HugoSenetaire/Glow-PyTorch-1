@@ -102,6 +102,7 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     n = 0
     index = 0
     compteur_inf = 0
+    compteur_empty = 0
     indexes = np.arange(0, len(sampling_dataset), step=1)
     random.shuffle(indexes)
     while n<T and index< len(sampling_dataset) :
@@ -115,9 +116,11 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         current_grad = []
         for _, param in model.named_parameters():
             if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any() :
-                if torch.isinf(param.grad).any():
-                    current_grad.append(-param.grad.view(-1))
-
+                current_grad.append(-param.grad.view(-1))
+        if len(current_grad)==0:
+            print("Found empty")
+            compteur_empty +=1
+            continue
         current_grad = torch.cat(current_grad)
         if torch.isinf(current_grad).any() or torch.isnan(current_grad).any() :
             print("Found inf")
@@ -136,6 +139,7 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     # print(total_grad.max())
     # print(total_grad.min())
     print(f"Number of inf is {compteur_inf}")
+    print(f"Number of empty is {compteur_empty}")
 
     return total_grad
 
