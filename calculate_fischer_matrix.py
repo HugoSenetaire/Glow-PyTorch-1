@@ -71,7 +71,8 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         for _, param in model.named_parameters():
             if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any():
                 current_grad.append(-param.grad.view(-1))
-
+        if len(current_grad) == 0 :
+            continue  
         current_grad = torch.cat(current_grad)**2
         if torch.isinf(current_grad).any() :
             continue
