@@ -73,8 +73,8 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         nll.backward()
         current_grad = []
         for _, param in model.named_parameters():
-            # if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any():
-            current_grad.append(-param.grad.view(-1))
+            if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any():
+                current_grad.append(-param.grad.view(-1))
         if len(current_grad) == 0 :
             print("No grad calculation available")
             compteur_empty +=1
@@ -114,9 +114,9 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         nll.backward()
         current_grad = []
         for _, param in model.named_parameters():
-            # if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any() :
-                # if torch.isinf(param.grad).any():
-            current_grad.append(-param.grad.view(-1))
+            if param.grad is not None and not torch.isinf(param.grad).any() and not torch.isnan(param.grad).any() :
+                if torch.isinf(param.grad).any():
+                    current_grad.append(-param.grad.view(-1))
 
         current_grad = torch.cat(current_grad)
         if torch.isinf(current_grad).any() or torch.isnan(current_grad).any() :
