@@ -106,7 +106,7 @@ def calculate_score_statistic_from_model(data, pathmodel, pathweights, inv_fisch
             grads = torch.cat(grads)
             for key in inv_fischer_matrix.keys():
                 score_aux = torch.mean(grads**2 * inv_fischer_matrix[key])
-                if not torch.isinf(score_aux).any():
+                if not torch.isinf(score_aux).any() and not torch.isnan(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
                 else :
                     compteur +=1

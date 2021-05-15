@@ -60,6 +60,9 @@ def global_fisher_mmd_from_model(path, epoch, data1, data2, model, dataset1_name
         gradient_mean = {}
         for T in T_list_fischer :
             inv_sqrt_fischer_approximation_matrix[T] = torch.pow(fischer_approximation_from_model(model, T=T, type_fischer=type_fischer, sampling_dataset=sampling_dataset), -1/2)
+            print('Inv fischer is nan ', torch.isnan(inv_sqrt_fischer_approximation_matrix[T]).any())
+            print('Inv fischer is inf ', torch.isinf(inv_sqrt_fischer_approximation_matrix[T]).any())
+
         for T in T_list_gradient : 
             gradient_mean[T] = gradient_mean_from_model(model, sampling_dataset, T)
         fischer_score_1 = calculate_fischer_mmd_from_model(data1, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader)
