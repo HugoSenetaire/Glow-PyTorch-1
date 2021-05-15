@@ -142,6 +142,8 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
     print(f"Number of inf is {compteur_inf}")
     print(f"Number of empty is {compteur_empty}")
 
+    print("Is inf total grad", torch.isinf(total_grad).any())
+    print("Is nan total grad", torch.isnan(total_grad).any())
     return total_grad
 
 

@@ -67,7 +67,6 @@ def global_fisher_mmd_from_model(path, epoch, data1, data2, model, dataset1_name
 
         for T in T_list_gradient : 
             gradient_mean[T] = gradient_mean_from_model(model, sampling_dataset, T)
-
             print('gradient mean fischer is nan ', torch.isnan(gradient_mean[T]).any())
             print('gradient mean fischer is inf ', torch.isinf(gradient_mean[T]).any())
         fischer_score_1 = calculate_fischer_mmd_from_model(data1, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader)
@@ -97,6 +96,10 @@ def calculate_fischer_mmd_from_model(data, model, inv_fischer_matrix_sqrt, gradi
         print("Fishcher inf ?", torch.isinf(inv_fischer_matrix_sqrt[key[0]]).any())
         print("Fishcher nan ?", torch.isnan(inv_fischer_matrix_sqrt[key[0]]).any())
         print(inv_fischer_matrix_sqrt[key[0]])
+        print("Gradient inf ?", torch.isinf(gradient_mean[key[1]]).any())
+        print("Gradient nan ?", torch.isnan(gradient_mean[key[1]]).any())
+        print(gradient_mean[key[1]])
+
 
     if not dataloader :
         dataloader_aux = [(tqdm.tqdm(data),None)]
