@@ -5,6 +5,8 @@ import shutil
 import random
 from itertools import islice
 
+from numpy.lib.function_base import gradient
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -65,6 +67,9 @@ def global_fisher_mmd_from_model(path, epoch, data1, data2, model, dataset1_name
 
         for T in T_list_gradient : 
             gradient_mean[T] = gradient_mean_from_model(model, sampling_dataset, T)
+
+            print('gradient mean fischer is nan ', torch.isnan(gradient_mean[T]).any())
+            print('gradient mean fischer is inf ', torch.isinf(gradient_mean[T]).any())
         fischer_score_1 = calculate_fischer_mmd_from_model(data1, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader)
         fischer_score_2 = calculate_fischer_mmd_from_model(data2, model, inv_sqrt_fischer_approximation_matrix, gradient_mean, dataloader = dataloader) 
 
@@ -80,13 +85,18 @@ def global_fisher_mmd_from_model(path, epoch, data1, data2, model, dataset1_name
 
 
 
-def calculate_fischer_mmd_from_model(data, model, gradient_mean , inv_fischer_matrix_sqrt, dataloader = False):
+def calculate_fischer_mmd_from_model(data, model, inv_fischer_matrix_sqrt, gradient_mean, dataloader = False):
     torch.random.manual_seed(0)
     np.random.seed(0)
     score = {}
     compteur = 0
+
+    
     for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
         score[key]= []
+        print("Fishcher inf ?", torch.isinf(inv_fischer_matrix_sqrt[key[0]]).any())
+        print("Fishcher nan ?", torch.isnan(inv_fischer_matrix_sqrt[key[0]]).any())
+        print(inv_fischer_matrix_sqrt[key[0]])
 
     if not dataloader :
         dataloader_aux = [(tqdm.tqdm(data),None)]
