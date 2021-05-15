@@ -135,16 +135,13 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
         else :
             total_grad =  (n/(n+1))  * total_grad + (1/(n+1)) * current_grad
         
-        print("Total grad", total_grad)
-        print("Total grad_aux", total_grad_aux)
-        print("current grad", current_grad)
 
-        # if torch.isinf(total_grad).any() or torch.isnan(total_grad).any() :
-        #     print("Total Grad is inf")
-        #     indexNan = torch.where(torch.isinf(total_grad))
-        #     print("Total grad", total_grad[indexNan])
-        #     print("Total grad_aux", total_grad_aux[indexNan])
-        #     print("current grad", current_grad[indexNan])
+        if torch.isinf(total_grad).any() or torch.isnan(total_grad).any() :
+            print("Total Grad is inf")
+            indexNan = torch.where(torch.isinf(total_grad))
+            print("Total grad", total_grad[indexNan])
+            print("Total grad_aux", total_grad_aux[indexNan])
+            print("current grad", current_grad[indexNan])
         total_grad_aux = total_grad
 
 
