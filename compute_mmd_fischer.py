@@ -99,11 +99,11 @@ def calculate_fischer_mmd_from_model(data, model, gradient_mean , inv_fischer_ma
             x = x.to(device_test).unsqueeze(0)
             _, nll, _ = model(x, y_onehot=None)
             nll.backward()
-            for _, param_copy in model.named_parameters():
-                # if param_copy.grad is not None and not torch.isinf(param_copy.grad).any() and not torch.isnan(param_copy.grad).any() :
-                grads.append(-param_copy.grad.view(-1))
-                # else : 
-                    # print(name_copy)
+            for name_copy, param_copy in model.named_parameters():
+                if param_copy.grad is not None and not torch.isinf(param_copy.grad).any() and not torch.isnan(param_copy.grad).any() :
+                    grads.append(-param_copy.grad.view(-1))
+                else : 
+                    print(name_copy)
             grads = torch.cat(grads)
             for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
                 score_aux = torch.linalg.norm( (grads - gradient_mean[key[1]]) * inv_fischer_matrix_sqrt[key[0]])
