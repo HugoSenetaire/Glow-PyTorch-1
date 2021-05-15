@@ -122,7 +122,7 @@ def calculate_fischer_mmd_from_model(data, model, inv_fischer_matrix_sqrt, gradi
                     print(name_copy)
             grads = torch.cat(grads)
             for key in zip(inv_fischer_matrix_sqrt.keys(), gradient_mean.keys()):
-                score_aux = torch.linalg.norm( (grads - gradient_mean[key[1]]) * inv_fischer_matrix_sqrt[key[0]])
+                score_aux = torch.linalg.norm(grads* inv_fischer_matrix_sqrt[key[0]] - gradient_mean[key[1]] * inv_fischer_matrix_sqrt[key[0]])
                 if not torch.isinf(score_aux).any() and not torch.isnan(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
                 else :
