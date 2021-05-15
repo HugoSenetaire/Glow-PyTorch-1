@@ -87,7 +87,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         if fischer_matrix is None :
             fischer_matrix = copy.deepcopy(current_grad)
         else :
-            fischer_matrix = (1/n+1) * (n * current_grad + fischer_matrix)
+            fischer_matrix = (n/n+1) * fischer_matrix + 1/(n+1) * current_grad
         n+=1
         index+=1
 
