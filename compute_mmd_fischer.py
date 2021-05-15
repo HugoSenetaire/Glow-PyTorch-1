@@ -126,6 +126,7 @@ def calculate_fischer_mmd_from_model(data, model, inv_fischer_matrix_sqrt, gradi
                 if not torch.isinf(score_aux).any() and not torch.isnan(score_aux).any():
                     score[key].append(score_aux.detach().cpu().numpy())
                 else :
+                    print(score_aux)
                     print(torch.mean(grads))
                     print(torch.mean(gradient_mean[key[1]]))
                     print(torch.mean(inv_fischer_matrix_sqrt[key[0]]))
