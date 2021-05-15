@@ -92,7 +92,7 @@ def calculate_typicality_mmd_from_model(data, model, log_p_mean, dataloader = Fa
             _, nll, _ = model(x, y_onehot=None)
 
             for key in score.keys():
-                score[key].append((-nll * log_p_mean).cpu().detach().numpy())
+                score[key].append(torch.linalg.norm( log_p_mean + nll).cpu().detach().numpy())
                       
     for key in score.keys():
         score[key] = np.array(score[key]).reshape(-1)
