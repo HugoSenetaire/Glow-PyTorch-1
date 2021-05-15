@@ -87,7 +87,7 @@ def fischer_approximation_from_model(model, T = 1000, temperature = 1, type_fisc
         if fischer_matrix is None :
             fischer_matrix = copy.deepcopy(current_grad)
         else :
-            fischer_matrix = (n/n+1) * fischer_matrix + 1/(n+1) * current_grad
+            fischer_matrix = (n/(n+1)) * fischer_matrix + (1/(n+1)) * current_grad
         n+=1
         index+=1
 
@@ -133,7 +133,7 @@ def gradient_mean_from_model(model, sampling_dataset , T = 1000):
             total_grad = copy.deepcopy(current_grad)
             total_grad_aux = total_grad
         else :
-            total_grad =  (n/n+1)  * total_grad + (1/n+1) * current_grad
+            total_grad =  (n/(n+1))  * total_grad + (1/(n+1)) * current_grad
         
         print("Total grad", total_grad)
         print("Total grad_aux", total_grad_aux)
